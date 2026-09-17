@@ -1,0 +1,34 @@
+# ─── secrets & env ───
+.env
+*.secret_key
+backend/.secret_key
+
+# ─── python ───
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.sqlite3
+*.db
+
+# ─── node / frontend ───
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+
+# ─── editors / os ───
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ─── research exports (generated, not committed) ───
+exports/*.csv
+exports/*.json

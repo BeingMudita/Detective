@@ -1,0 +1,46 @@
+name: internet-detective
+
+# Zero-cost, fully local stack. `docker compose up` needs no cloud account,
+# no API key, and no paid service. Everything runs on your machine.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-detective}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-detective}
+      POSTGRES_DB: ${POSTGRES_DB:-detective}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-detective} -d ${POSTGRES_DB:-detective}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      # Point the backend at the postgres service (overrides any localhost default)
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-detective}:${POSTGRES_PASSWORD:-detective}@postgres:5432/${POSTGRES_DB:-detective}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    environment:
+      # The Vite dev server proxies /api -> backend (same-origin in the browser)
+      VITE_PROXY_TARGET: http://backend:8000
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  pgdata:

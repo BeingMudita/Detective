@@ -1,0 +1,917 @@
+<title>Internet Detective</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============ TOKENS ============ */
+:root{
+  /* light — "case dossier on paper" */
+  --bg:#f4f1ea;
+  --surface:#fbf9f4;
+  --surface-2:#ece6d9;
+  --border:#ddd4c3;
+  --border-strong:#c9bda6;
+  --text:#22282f;
+  --muted:#6f685b;
+  --faint:#8c8577;
+  --accent:#a86910;         /* brass / redaction amber */
+  --accent-2:#3a5a8c;       /* connection slate-blue */
+  --accent-ink:#7d4f0a;
+  --good:#2f8f68;
+  --warn:#a86910;
+  --bad:#ad433d;
+  --tag-bg:rgba(168,105,16,.10);
+  --paper:#f8f6f0;          /* diagram cards (constant, for mermaid legibility) */
+  --code-bg:#f1ede3;
+  --shadow:0 1px 2px rgba(40,32,16,.06),0 8px 24px -12px rgba(40,32,16,.18);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    /* dark — "SOC investigation board" */
+    --bg:#0d1116;
+    --surface:#141a22;
+    --surface-2:#1b2230;
+    --border:#29323f;
+    --border-strong:#3a4657;
+    --text:#e7eaef;
+    --muted:#97a1b0;
+    --faint:#6f7b8b;
+    --accent:#eab04d;
+    --accent-2:#77aec4;
+    --accent-ink:#f2c674;
+    --good:#57b894;
+    --warn:#eab04d;
+    --bad:#db6a63;
+    --tag-bg:rgba(234,176,77,.12);
+    --paper:#f7f6f2;
+    --code-bg:#0f151d;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 40px -18px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1116;--surface:#141a22;--surface-2:#1b2230;--border:#29323f;--border-strong:#3a4657;
+  --text:#e7eaef;--muted:#97a1b0;--faint:#6f7b8b;--accent:#eab04d;--accent-2:#77aec4;--accent-ink:#f2c674;
+  --good:#57b894;--warn:#eab04d;--bad:#db6a63;--tag-bg:rgba(234,176,77,.12);--paper:#f7f6f2;--code-bg:#0f151d;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 40px -18px rgba(0,0,0,.7);
+}
+
+/* ============ BASE ============ */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:16px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.15;margin:0}
+a{color:var(--accent-ink);text-underline-offset:3px;text-decoration-thickness:1px}
+p{margin:0 0 .9rem}
+::selection{background:var(--accent);color:var(--bg)}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:1rem;
+  padding:.7rem clamp(1rem,4vw,2.2rem);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:saturate(140%) blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:600;letter-spacing:-.01em}
+.brand .glyph{
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  background:var(--accent);color:var(--bg);font-size:15px;flex:none;
+}
+.brand small{font:500 11px/1 var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.topbar .spacer{flex:1}
+.status-pill{
+  display:inline-flex;align-items:center;gap:.45rem;
+  font:500 11.5px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;
+  color:var(--muted);border:1px solid var(--border);border-radius:100px;padding:.4rem .7rem;
+}
+.status-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 3px var(--tag-bg)}
+.theme-btn{
+  font:500 12px/1 var(--mono);color:var(--muted);cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem .6rem;
+}
+.theme-btn:hover{color:var(--text);border-color:var(--border-strong)}
+@media (max-width:720px){.status-pill{display:none}}
+
+/* ============ HERO ============ */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero-net{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+.hero-inner{
+  position:relative;max-width:1080px;margin:0 auto;
+  padding:clamp(3.5rem,9vw,7rem) clamp(1.2rem,5vw,2.2rem) clamp(2.5rem,6vw,4rem);
+}
+.eyebrow{
+  font:500 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--accent-ink);
+  display:flex;align-items:center;gap:.7rem;margin-bottom:1.4rem;
+}
+.eyebrow::before{content:"";width:34px;height:1px;background:var(--accent)}
+.hero h1{
+  font-family:var(--serif);font-weight:500;font-optical-sizing:auto;
+  font-size:clamp(2.6rem,7.5vw,5.4rem);letter-spacing:-.02em;line-height:.98;
+}
+.hero h1 em{font-style:italic;color:var(--accent-ink)}
+.hero .sub{
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(1.25rem,3.4vw,2rem);color:var(--muted);margin-top:.6rem;
+}
+.hero .lede{max-width:60ch;margin-top:1.8rem;color:var(--text);font-size:1.05rem}
+.meta-row{
+  display:flex;flex-wrap:wrap;gap:.6rem;margin-top:2rem;
+  font:500 11.5px/1 var(--mono);letter-spacing:.02em;
+}
+.meta-row span{
+  border:1px solid var(--border);border-radius:7px;padding:.5rem .7rem;color:var(--muted);
+  background:color-mix(in srgb,var(--surface) 60%,transparent);
+}
+.meta-row span b{color:var(--text);font-weight:600}
+
+/* stat strip */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.stats div{background:var(--bg);padding:1.4rem clamp(1rem,4vw,2rem)}
+.stats .n{font:600 clamp(1.5rem,4vw,2.2rem)/1 var(--serif);color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.stats .l{font:500 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:.5rem}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+/* ============ SHELL ============ */
+.shell{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:248px minmax(0,1fr);gap:clamp(1.5rem,4vw,3.5rem);padding:0 clamp(1.2rem,5vw,2.2rem)}
+.toc{position:sticky;top:64px;align-self:start;height:calc(100vh - 64px);overflow-y:auto;padding:2.4rem 0 3rem;font-size:13.5px}
+.toc h4{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:1rem}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.15rem}
+.toc a{display:flex;gap:.65rem;align-items:baseline;padding:.4rem .55rem;border-radius:7px;text-decoration:none;color:var(--muted);transition:background .15s,color .15s}
+.toc a:hover{background:var(--surface-2);color:var(--text)}
+.toc a .num{font:500 11px/1.5 var(--mono);color:var(--accent-ink);min-width:1.6em}
+.content{padding:2.4rem 0 5rem;min-width:0}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .toc{display:none}
+  .content{padding-top:1.6rem}
+}
+
+/* ============ SECTIONS ============ */
+section{scroll-margin-top:70px;padding:2.2rem 0;border-top:1px solid var(--border)}
+section:first-of-type{border-top:none}
+.sec-head{display:flex;align-items:baseline;gap:1rem;margin-bottom:1.4rem}
+.sec-head .idx{font:500 13px/1 var(--mono);color:var(--accent-ink);letter-spacing:.05em;padding-top:.35rem}
+.sec-head h2{font-family:var(--serif);font-weight:500;font-size:clamp(1.7rem,4vw,2.5rem);letter-spacing:-.015em}
+.sec-head .tagline{color:var(--muted);font-size:.95rem;margin-top:.25rem}
+h3.sub-h{font-size:1.15rem;font-weight:600;letter-spacing:-.01em;margin:2rem 0 .8rem}
+h4.sub-h{font:600 .8rem/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);margin:1.6rem 0 .7rem}
+.content p,.content li{max-width:72ch}
+.content ul,.content ol{margin:0 0 1rem;padding-left:1.2rem}
+.content li{margin:.3rem 0}
+.content li::marker{color:var(--accent)}
+strong{font-weight:600}
+
+/* ============ CARDS / CALLOUTS ============ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.3rem;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.2rem 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.2rem 0}
+@media (max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+.card h5{font:600 .9rem/1.3 var(--sans);margin-bottom:.3rem;display:flex;align-items:center;gap:.5rem}
+.card p{font-size:.9rem;color:var(--muted);margin:0}
+.card .k{font:500 11px/1 var(--mono);color:var(--accent-ink);letter-spacing:.04em}
+
+.callout{border-left:3px solid var(--accent);background:var(--tag-bg);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;margin:1.3rem 0;font-size:.94rem}
+.callout .lbl{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);display:block;margin-bottom:.45rem}
+.callout.rec{border-color:var(--good)}
+.callout.rec .lbl{color:var(--good)}
+.callout.warn{border-color:var(--bad)}
+.callout.warn .lbl{color:var(--bad)}
+.callout p:last-child{margin-bottom:0}
+
+/* MVP tags */
+.tag{display:inline-flex;align-items:center;font:600 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.28em .5em;border-radius:5px;vertical-align:middle}
+.tag.mvp{background:var(--good);color:#04140e}
+.tag.later{background:var(--surface-2);color:var(--muted);border:1px solid var(--border)}
+.tag.stretch{background:var(--accent-2);color:#04121f}
+
+/* ============ TABLES ============ */
+.twrap{overflow-x:auto;margin:1.2rem 0;border:1px solid var(--border);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:.87rem;min-width:520px}
+th,td{text-align:left;padding:.65rem .85rem;border-bottom:1px solid var(--border);vertical-align:top}
+thead th{background:var(--surface-2);font:600 11px/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:color-mix(in srgb,var(--surface) 55%,transparent)}
+td code,.mono{font-family:var(--mono);font-size:.86em;color:var(--accent-ink)}
+.method{font:600 10.5px/1 var(--mono);padding:.3em .5em;border-radius:5px;letter-spacing:.04em}
+.m-get{background:rgba(58,90,140,.16);color:var(--accent-2)}
+.m-post{background:rgba(47,143,104,.16);color:var(--good)}
+.m-del{background:rgba(173,67,61,.16);color:var(--bad)}
+.m-put{background:var(--tag-bg);color:var(--accent-ink)}
+
+/* ============ CODE ============ */
+pre.code{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;overflow-x:auto;margin:1.2rem 0;font-family:var(--mono);font-size:.82rem;line-height:1.65;color:var(--text)}
+pre.code .c{color:var(--faint)}
+pre.code .key{color:var(--accent-ink)}
+pre.code .str{color:var(--good)}
+pre.code .num{color:var(--accent-2)}
+code.inline{font-family:var(--mono);font-size:.85em;background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:.1em .4em;color:var(--accent-ink)}
+
+/* ============ DIAGRAM CARDS (mermaid on constant paper) ============ */
+.diagram{background:var(--paper);border:1px solid var(--border-strong);border-radius:12px;padding:1.4rem 1rem .9rem;margin:1.3rem 0;position:relative;box-shadow:var(--shadow)}
+.diagram::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 2px 5px rgba(0,0,0,.35),inset 0 -2px 3px rgba(0,0,0,.2)}
+.diagram .cap{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#7a746a;text-align:center;margin-top:.6rem}
+.diagram pre.mermaid{margin:0;display:flex;justify-content:center;overflow-x:auto}
+.diagram pre.mermaid:not([data-processed]){color:#666;font:500 12px/1.5 var(--mono);white-space:pre-wrap;text-align:center;opacity:.6}
+
+/* rubric bars */
+.rubric{display:flex;flex-direction:column;gap:.55rem;margin:1.2rem 0}
+.rubric .row{display:grid;grid-template-columns:180px 1fr 52px;align-items:center;gap:.8rem;font-size:.86rem}
+.rubric .bar{height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.rubric .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+.rubric .val{font-family:var(--mono);text-align:right;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){.rubric .row{grid-template-columns:110px 1fr 46px}}
+
+/* footer */
+footer{border-top:1px solid var(--border);padding:2.5rem clamp(1.2rem,5vw,2.2rem) 4rem;max-width:1180px;margin:0 auto;color:var(--muted);font-size:.9rem}
+footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1rem 1.2rem;background:var(--tag-bg);color:var(--text);font-size:.9rem;margin-bottom:1.6rem}
+.reveal{opacity:0;transform:translateY(10px);animation:rise .6s ease forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}}
+</style>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="glyph">🕵</span>
+    <div>Internet&nbsp;Detective <small>Design&nbsp;Spec&nbsp;v1.1&nbsp;·&nbsp;₹0</small></div>
+  </div>
+  <div class="spacer"></div>
+  <span class="status-pill"><span class="dot"></span>Awaiting approval</span>
+  <button class="theme-btn" id="themeBtn" aria-label="Toggle colour theme">◐ Theme</button>
+</header>
+
+<div class="hero">
+  <svg class="hero-net" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="var(--accent)" stroke-width="1" opacity="0.55">
+      <line x1="140" y1="120" x2="360" y2="230"/><line x1="360" y1="230" x2="250" y2="400"/>
+      <line x1="360" y1="230" x2="560" y2="160"/><line x1="560" y1="160" x2="780" y2="260"/>
+      <line x1="780" y1="260" x2="700" y2="410"/><line x1="780" y1="260" x2="980" y2="180"/>
+      <line x1="980" y1="180" x2="1080" y2="330"/><line x1="560" y1="160" x2="620" y2="360"/>
+      <line x1="250" y1="400" x2="620" y2="360"/><line x1="980" y1="180" x2="1120" y2="110"/>
+    </g>
+    <g fill="var(--accent)">
+      <circle cx="140" cy="120" r="4"/><circle cx="360" cy="230" r="6"/><circle cx="250" cy="400" r="4"/>
+      <circle cx="560" cy="160" r="6"/><circle cx="780" cy="260" r="7"/><circle cx="700" cy="410" r="4"/>
+      <circle cx="980" cy="180" r="6"/><circle cx="1080" cy="330" r="4"/><circle cx="620" cy="360" r="5"/>
+      <circle cx="1120" cy="110" r="3"/>
+    </g>
+    <g fill="var(--accent-2)" opacity="0.7">
+      <circle cx="360" cy="230" r="10" fill="none" stroke="var(--accent-2)" stroke-width="1"/>
+      <circle cx="780" cy="260" r="12" fill="none" stroke="var(--accent-2)" stroke-width="1"/>
+    </g>
+  </svg>
+  <div class="hero-inner reveal">
+    <div class="eyebrow">Product &amp; Systems Architecture</div>
+    <h1>The internet<br>leaves <em>clues.</em></h1>
+    <div class="sub">Can you connect them?</div>
+    <p class="lede">A complete design package for <strong>Internet Detective</strong> — a data-driven OSINT investigation simulation where players crack fictional cybersecurity mysteries by discovering entities, correlating evidence, reconstructing timelines, and defending a case. This document is the architecture to review and approve <em>before</em> any implementation begins.</p>
+    <div class="meta-row">
+      <span>Project&nbsp;·&nbsp;<b>B.Tech CSE FYP</b></span>
+      <span>Type&nbsp;·&nbsp;<b>OSINT Investigation Sim</b></span>
+      <span>Stack&nbsp;·&nbsp;<b>React + FastAPI + Postgres</b></span>
+      <span>Doc&nbsp;·&nbsp;<b>14 deliverables</b></span>
+      <span>Date&nbsp;·&nbsp;<b>2026-09-17</b></span>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div><div class="n">100%</div><div class="l">Fictional / simulated data</div></div>
+  <div><div class="n">9</div><div class="l">Delivery phases</div></div>
+  <div><div class="n">6</div><div class="l">Scored reasoning dimensions</div></div>
+  <div><div class="n">1</div><div class="l">Engine · N cases (data-driven)</div></div>
+</div>
+
+<div class="shell">
+  <nav class="toc" aria-label="Table of contents">
+    <h4>Deliverables</h4>
+    <ol>
+      <li><a href="#s0"><span class="num">00</span> How to read this</a></li>
+      <li><a href="#s1"><span class="num">01</span> Product architecture</a></li>
+      <li><a href="#s2"><span class="num">02</span> Feature specification</a></li>
+      <li><a href="#s3"><span class="num">03</span> System architecture</a></li>
+      <li><a href="#s4"><span class="num">04</span> Database &amp; ER model</a></li>
+      <li><a href="#s5"><span class="num">05</span> API specification</a></li>
+      <li><a href="#s6"><span class="num">06</span> Investigation engine</a></li>
+      <li><a href="#s7"><span class="num">07</span> Case data model</a></li>
+      <li><a href="#s8"><span class="num">08</span> Watson AI / RAG</a></li>
+      <li><a href="#s9"><span class="num">09</span> Security threat model</a></li>
+      <li><a href="#s10"><span class="num">10</span> Repository structure</a></li>
+      <li><a href="#s11"><span class="num">11</span> MVP definition</a></li>
+      <li><a href="#s12"><span class="num">12</span> Implementation roadmap</a></li>
+      <li><a href="#s13"><span class="num">13</span> Case #001 spec</a></li>
+      <li><a href="#s14"><span class="num">14</span> Tech choices</a></li>
+      <li><a href="#decisions"><span class="num">→</span> Decisions for you</a></li>
+    </ol>
+  </nav>
+
+  <main class="content">
+
+  <!-- ============ 00 ============ -->
+  <section id="s0">
+    <div class="sec-head"><div class="idx">00</div><div><h2>How to read this</h2><div class="tagline">One idea holds the whole project together.</div></div></div>
+    <p>Every decision below serves a single architectural thesis, which is also your strongest viva talking point:</p>
+    <div class="callout rec">
+      <span class="lbl">The thesis</span>
+      <p><strong>The game is a data-driven engine, not a hard-coded story.</strong> A case is <em>structured data</em> — a graph of entities, evidence, relationships, timeline events and simulated OSINT records with an authored solution rubric. The React client is a generic "player" that can render <em>any</em> valid case; the FastAPI backend evaluates <em>any</em> submission against its rubric. Adding Case #002…#100 means writing data and running a seed script — <strong>zero application-code changes</strong>. This is what separates the project from a CRUD college app.</p>
+    </div>
+    <p>The document delivers all 14 items you asked for, in order. Two conventions:</p>
+    <ul>
+      <li><span class="tag mvp">MVP</span> ships in the first playable slice · <span class="tag later">LATER</span> is designed now, built after MVP · <span class="tag stretch">STRETCH</span> is optional depth if time allows.</li>
+      <li>Diagrams render on "pinned paper" cards so they stay legible in both light and dark. Green callouts are <strong>recommendations</strong>; red are <strong>risks / things to cut</strong>.</li>
+    </ul>
+    <p>I've deliberately made the ambitious spec <em>feasible</em> for one student in a final year: the full vision is preserved as a roadmap, but the MVP is a thin, demonstrable vertical slice. Where you invited trade-off comparisons, I give a recommendation rather than a survey. Open decisions that genuinely need your call are collected at the end.</p>
+  </section>
+
+  <!-- ============ 01 ============ -->
+  <section id="s1">
+    <div class="sec-head"><div class="idx">01</div><div><h2>Product architecture</h2><div class="tagline">Five bounded contexts, one engine.</div></div></div>
+    <p>The product decomposes into five cooperating contexts. Keeping them separate is what makes the system data-driven and testable.</p>
+    <div class="grid2">
+      <div class="card"><h5><span class="k">A</span> Authoring</h5><p>How a case is created and validated — as JSON (MVP) or via the visual admin editor (later). Output: a validated case graph + solution rubric.</p></div>
+      <div class="card"><h5><span class="k">B</span> Case Store</h5><p>The normalized, immutable source of truth for cases in Postgres. Cases are versioned; a live investigation always references a fixed case version.</p></div>
+      <div class="card"><h5><span class="k">C</span> Investigation Runtime</h5><p>Per-player state: what's been discovered, collected, connected, hypothesised. "Fog of war" over the case graph. The action log is the ground truth.</p></div>
+      <div class="card"><h5><span class="k">D</span> Evaluation</h5><p>Deterministic scoring of a submission against the rubric across six dimensions. Pure function of (case, investigation state, submission).</p></div>
+      <div class="card"><h5><span class="k">E</span> Learning &amp; Meta</h5><p>Detective Academy, Watson mentor, gamification (XP/ranks/achievements), analytics. Wraps the core loop with pedagogy and progression.</p></div>
+      <div class="card"><h5><span class="k">◆</span> Cross-cutting</h5><p>Identity &amp; RBAC, action logging / integrity, notifications, and the design system — used by every context.</p></div>
+    </div>
+    <div class="callout">
+      <span class="lbl">Why this shape</span>
+      <p>Authoring is separated from Runtime so a professor can see cases are <em>content</em>, not code. Evaluation is a pure module so scoring is unit-testable and explainable in a viva ("here is exactly why the player scored 86"). The Case Store being immutable/versioned means analytics across many players stay comparable.</p>
+    </div>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section id="s2">
+    <div class="sec-head"><div class="idx">02</div><div><h2>Feature specification</h2><div class="tagline">Every module, scoped honestly against a final-year timeline.</div></div></div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Module</th><th>Key capabilities</th><th>Scope</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Identity &amp; Profile</strong></td><td>Register/login, JWT + refresh, RBAC (PLAYER/ADMIN), profile with rank, XP, streak.</td><td><span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>Case Catalog</strong></td><td>Browse cases, difficulty ★, learning objectives, prerequisites, "recommended next".</td><td><span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>Case Briefing</strong></td><td>Cinematic brief, objectives, initial evidence package hand-off.</td><td><span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>Investigation Workspace</strong></td><td>React Flow graph canvas — drag/zoom/pin nodes, inspect entities, draw relationships, case notes.</td><td><span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>Simulated OSINT tools</strong></td><td>Search, Email, Domain (DNS), IP, Identity, Image/metadata — each queries fictional in-case datasets. <em>No real network calls, ever.</em></td><td><span class="tag mvp">MVP</span> (search/email/domain/IP) · <span class="tag later">LATER</span> (image/metadata)</td></tr>
+          <tr><td><strong>Evidence System</strong></td><td>Collect, tag, annotate, link to entities, mark supporting/refuting; reliability + hash fields.</td><td><span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>Timeline Builder</strong></td><td>Place/drag events, detect gaps &amp; conflicting timestamps, filter by entity/source.</td><td><span class="tag mvp">MVP</span> (build+score) · <span class="tag later">LATER</span> (conflict UI)</td></tr>
+          <tr><td><strong>Hypothesis System</strong></td><td>Author hypotheses, attach supporting/contradicting evidence, test before submit.</td><td><span class="tag mvp">MVP</span> (single) · <span class="tag later">LATER</span> (multiple/compare)</td></tr>
+          <tr><td><strong>Submission &amp; Scoring</strong></td><td>Final case form + deterministic 6-dimension score + post-mortem explanation.</td><td><span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>Watson AI mentor</strong></td><td>Grounded, non-spoiling hints via retrieval scoped to what the player has discovered; progressive hint ladder.</td><td><span class="tag mvp">MVP</span> (rule-based ladder) · <span class="tag stretch">STRETCH</span> (LLM phrasing)</td></tr>
+          <tr><td><strong>Detective Academy</strong></td><td>Lessons: OSINT fundamentals, DNS, metadata, bias — each Concept→Example→Mini-challenge.</td><td><span class="tag later">LATER</span></td></tr>
+          <tr><td><strong>Gamification</strong></td><td>XP, ranks (Rookie→Master Detective), achievements, streaks.</td><td><span class="tag mvp">MVP</span> (XP+rank) · <span class="tag later">LATER</span> (achievements)</td></tr>
+          <tr><td><strong>Admin Case Editor</strong></td><td>Visual graph editor mirroring the investigation board; evidence/timeline/solution config.</td><td><span class="tag later">LATER</span> — MVP authors via validated JSON + seed</td></tr>
+          <tr><td><strong>Analytics</strong></td><td>Player skill radar; admin case-difficulty, completion, common-wrong-hypothesis, hint usage.</td><td><span class="tag later">LATER</span> (strong FYP evaluation chapter)</td></tr>
+          <tr><td><strong>Integrity / Action Log</strong></td><td>Append-only event stream of every meaningful action — powers scoring, analytics, anti-cheat, research.</td><td><span class="tag mvp">MVP</span> (it <em>is</em> the scoring substrate)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section id="s3">
+    <div class="sec-head"><div class="idx">03</div><div><h2>System architecture</h2><div class="tagline">Container &amp; data-flow view.</div></div></div>
+    <div class="diagram">
+      <pre class="mermaid">%%{init:{'theme':'neutral','flowchart':{'curve':'basis'}}}%%
+flowchart TB
+  subgraph Client["Browser · React SPA"]
+    UI["Workspace · Graph canvas<br/>Dashboard · Academy"]
+    Store["TanStack Query cache<br/>Zustand session state"]
+  end
+  subgraph Edge["Nginx reverse proxy"]
+    RP["TLS · static assets<br/>rate-limit · routing"]
+  end
+  subgraph API["FastAPI application"]
+    Auth["Auth &amp; RBAC"]
+    CaseSvc["Case service"]
+    InvSvc["Investigation service"]
+    EvalSvc["Evaluation engine"]
+    AISvc["Watson service"]
+  end
+  subgraph Data["Persistence"]
+    PG[("PostgreSQL<br/>cases · investigations · actions")]
+    RD[("Redis<br/>sessions · rate-limit · cache")]
+  end
+  LLM["Claude API<br/>(tool-calling, scoped)"]
+  UI --> Store --> RP --> Auth
+  RP --> CaseSvc & InvSvc & EvalSvc & AISvc
+  Auth --> RD
+  CaseSvc --> PG
+  InvSvc --> PG & RD
+  EvalSvc --> PG
+  AISvc --> LLM
+  AISvc -. "retrieval tools<br/>(discovered scope only)" .-> InvSvc</pre>
+      <div class="cap">Fig 3.1 — Runtime containers. Watson never touches the DB directly; it calls scoped retrieval tools.</div>
+    </div>
+    <p>Requests enter through Nginx (TLS termination, static serving, coarse rate-limiting), hit the FastAPI app split into thin service modules over a repository layer, and persist to Postgres. Redis holds sessions, per-user rate-limit counters and hot read-caches. The only external dependency is the Claude API, and it is reachable <em>only</em> through the Watson service behind a tool-calling boundary — the LLM cannot see undiscovered case data.</p>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section id="s4">
+    <div class="sec-head"><div class="idx">04</div><div><h2>Database &amp; ER model</h2><div class="tagline">Normalized relational schema — the case graph lives in tables, not a graph DB.</div></div></div>
+    <div class="diagram">
+      <pre class="mermaid">%%{init:{'theme':'neutral'}}%%
+erDiagram
+  users ||--o{ investigations : starts
+  users ||--o{ user_achievements : earns
+  achievements ||--o{ user_achievements : awarded
+  cases ||--o{ case_versions : has
+  case_versions ||--o{ case_entities : contains
+  case_versions ||--o{ evidence : contains
+  case_versions ||--o{ timeline_events : contains
+  case_versions ||--o{ osint_records : contains
+  case_versions ||--o{ hints : provides
+  entity_types ||--o{ case_entities : classifies
+  case_entities ||--o{ relationships : source
+  case_entities ||--o{ relationships : target
+  case_versions ||--o{ investigations : instantiated
+  investigations ||--o{ investigation_actions : logs
+  investigations ||--o{ discovered_nodes : reveals
+  investigations ||--o{ collected_evidence : gathers
+  investigations ||--o{ player_edges : draws
+  investigations ||--o{ hypotheses : proposes
+  hypotheses ||--o{ hypothesis_evidence : cites
+  investigations ||--o| submissions : concludes
+  users {
+    uuid id PK
+    string email UK
+    string password_hash
+    string role
+    int xp
+    int rank_level
+  }
+  cases {
+    uuid id PK
+    string code UK
+    string title
+    int difficulty
+  }
+  case_versions {
+    uuid id PK
+    uuid case_id FK
+    int version
+    jsonb solution_rubric
+    bool published
+  }
+  case_entities {
+    uuid id PK
+    uuid case_version_id FK
+    uuid entity_type_id FK
+    string label
+    jsonb attributes
+    bool is_red_herring
+  }
+  relationships {
+    uuid id PK
+    uuid source_id FK
+    uuid target_id FK
+    string rel_type
+    bool is_correct
+  }
+  evidence {
+    uuid id PK
+    uuid case_version_id FK
+    string kind
+    string reliability
+    string content_hash
+    int relevance_weight
+  }
+  investigations {
+    uuid id PK
+    uuid user_id FK
+    uuid case_version_id FK
+    string status
+    timestamptz started_at
+  }
+  investigation_actions {
+    uuid id PK
+    uuid investigation_id FK
+    string action_type
+    jsonb payload
+    timestamptz at
+  }
+  submissions {
+    uuid id PK
+    uuid investigation_id FK
+    jsonb answers
+    jsonb score_breakdown
+    int total_score
+  }</pre>
+      <div class="cap">Fig 4.1 — Core ER model (subset). Full attribute lists in <span class="mono">docs/database.md</span>.</div>
+    </div>
+    <h4 class="sub-h">Design decisions &amp; reasoning</h4>
+    <ul>
+      <li><strong>UUID primary keys</strong> — investigation resources are user-owned; opaque IDs remove enumeration/IDOR surface and keep seed data portable.</li>
+      <li><strong>Case versioning</strong> — an <code class="inline">investigation</code> points at a <code class="inline">case_version</code>, never a mutable case. Editing a case creates a new version, so historical scores and analytics stay reproducible.</li>
+      <li><strong>Graph-in-SQL</strong> — <code class="inline">case_entities</code> + <code class="inline">relationships</code> (adjacency list) model the graph. Postgres handles the depth we need (recursive CTEs for pivots); a dedicated graph DB is unjustified complexity for a FYP — see §14.</li>
+      <li><strong>Hybrid JSONB</strong> — stable relational columns for anything queried/indexed (type, reliability, difficulty, ownership); flexible <code class="inline">attributes</code>/<code class="inline">payload</code> JSONB for entity- and action-specific fields. Avoids EAV sprawl while keeping the schema open.</li>
+      <li><strong>Append-only <code class="inline">investigation_actions</code></strong> — the single source of truth for scoring, analytics and integrity. Player-facing state tables (<code class="inline">discovered_nodes</code>, <code class="inline">collected_evidence</code>) are projections that can be rebuilt from the log.</li>
+    </ul>
+    <h4 class="sub-h">Indexes &amp; constraints (highlights)</h4>
+    <ul>
+      <li>Unique: <code class="inline">users.email</code>, <code class="inline">cases.code</code>, <code class="inline">(case_id, version)</code>, <code class="inline">(investigation_id, node_id)</code> on discovered/collected tables.</li>
+      <li>Composite index <code class="inline">(investigation_id, at)</code> on actions for replay; <code class="inline">(case_version_id)</code> on all case-child tables; GIN on JSONB attribute fields used in filters.</li>
+      <li>FKs with <code class="inline">ON DELETE CASCADE</code> from <code class="inline">case_versions</code> to children; <code class="inline">RESTRICT</code> from investigations to case_versions (never orphan a played case). CHECK constraints on enums (role, reliability, status, difficulty ∈ 1–5).</li>
+    </ul>
+  </section>
+
+  <!-- ============ 05 ============ -->
+  <section id="s5">
+    <div class="sec-head"><div class="idx">05</div><div><h2>API specification</h2><div class="tagline">Versioned REST · Pydantic-validated · OpenAPI auto-documented.</div></div></div>
+    <p>Base path <code class="inline">/api/v1</code>. Auth via short-lived JWT access token (Authorization header) + refresh token in an httpOnly, SameSite cookie. Uniform error envelope: <code class="inline">{ "error": { "code", "message", "details" } }</code>. All list endpoints paginate with <code class="inline">?limit&amp;cursor</code>.</p>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th><th>Auth</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/auth/register</code></td><td>Create player account</td><td>—</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/auth/login</code></td><td>Issue access + refresh tokens</td><td>—</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/auth/refresh</code></td><td>Rotate access token</td><td>cookie</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/auth/logout</code></td><td>Revoke refresh token</td><td>player</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/me</code></td><td>Profile, rank, XP, stats</td><td>player</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/cases</code></td><td>List catalog (filter by difficulty/status)</td><td>player</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/cases/{code}</code></td><td>Brief + initial evidence (no solution)</td><td>player</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/cases/{code}/start</code></td><td>Create investigation, return runtime state</td><td>player</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/investigations/{id}</code></td><td>Fog-of-war state (discovered only)</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/lookup</code></td><td>Run a simulated OSINT query → reveals nodes/evidence</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/actions</code></td><td>Log an action (view/note/pin…)</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/evidence</code></td><td>Collect / tag / annotate evidence</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/edges</code></td><td>Draw a relationship between two nodes</td><td>owner</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/investigations/{id}/timeline</code></td><td>Save reconstructed timeline</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/hypotheses</code></td><td>Create hypothesis + evidence links</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/submit</code></td><td>Final submission → score breakdown</td><td>owner</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/investigations/{id}/hint</code></td><td>Request next Watson hint (costs score)</td><td>owner</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/leaderboard</code></td><td>Ranked players</td><td>player</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/analytics/me</code></td><td>Personal skill radar</td><td>player</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/admin/cases</code></td><td>Create/import case (validated)</td><td>admin</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/admin/analytics/cases</code></td><td>Case difficulty &amp; completion metrics</td><td>admin</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="lbl">Key design point — the lookup endpoint is the game</span>
+      <p><code class="inline">POST /lookup</code> takes a tool + query, matches it against the case's <code class="inline">osint_records</code>, and returns only what that query legitimately reveals — appending to the player's discovered set server-side. The client never receives hidden nodes. This one endpoint enforces fog-of-war, drives discovery scoring, and keeps the solution un-leakable.</p>
+    </div>
+  </section>
+
+  <!-- ============ 06 ============ -->
+  <section id="s6">
+    <div class="sec-head"><div class="idx">06</div><div><h2>Investigation engine</h2><div class="tagline">Fog-of-war over a case graph, with the action log as ground truth.</div></div></div>
+    <p>The engine is the heart of the product. It has four responsibilities: <strong>reveal</strong> (what a lookup discovers), <strong>record</strong> (append the action), <strong>project</strong> (rebuild player-visible state), and <strong>evaluate</strong> (score a submission). Crucially, the <em>server</em> owns the full case graph; the <em>client</em> only ever holds the discovered subgraph.</p>
+    <div class="diagram">
+      <pre class="mermaid">%%{init:{'theme':'neutral','flowchart':{'curve':'basis'}}}%%
+flowchart LR
+  A["Player runs a<br/>lookup / pivot"] --> B{"Match against<br/>osint_records +<br/>relationships"}
+  B -->|"reveal rule fires"| C["Add nodes/edges/<br/>evidence to<br/>discovered set"]
+  B -->|"no match"| D["Empty / noise<br/>result"]
+  C --> E["Append<br/>investigation_action"]
+  D --> E
+  E --> F["Project runtime<br/>state to client"]
+  F --> A
+  E -. "at submit" .-> G["Evaluation engine<br/>replays log"]
+  G --> H["6-dimension<br/>score + rationale"]</pre>
+      <div class="cap">Fig 6.1 — Discovery loop. Every arrow back to the player passes through the reveal gate.</div>
+    </div>
+    <h4 class="sub-h">Reveal rules (the pivot mechanic)</h4>
+    <p>Each <code class="inline">osint_record</code> declares a <em>trigger</em> (e.g. "searching username <code class="inline">nightowl_42</code>") and a set of <em>reveals</em> (entity ids, edge ids, evidence ids). Pivoting from a discovered entity via a known relationship is also a trigger. This means the player genuinely <em>correlates</em>: the email is only found because the same username surfaced in two independent simulated sources.</p>
+    <h4 class="sub-h">Deterministic evaluation — six dimensions</h4>
+    <p>Scoring is a <strong>pure, rule-based function</strong> — reproducible, explainable, unit-testable. No LLM decides the score (an LLM may later <em>phrase</em> the post-mortem). Each dimension compares the player's state/log to the rubric:</p>
+    <div class="rubric">
+      <div class="row"><span>Evidence Collection</span><span class="bar"><i style="width:88%"></i></span><span class="val">/25</span></div>
+      <div class="row"><span>Evidence Relevance</span><span class="bar"><i style="width:90%"></i></span><span class="val">/20</span></div>
+      <div class="row"><span>Timeline Accuracy</span><span class="bar"><i style="width:85%"></i></span><span class="val">/20</span></div>
+      <div class="row"><span>Relationship Discovery</span><span class="bar"><i style="width:100%"></i></span><span class="val">/15</span></div>
+      <div class="row"><span>Hypothesis Quality</span><span class="bar"><i style="width:70%"></i></span><span class="val">/20</span></div>
+      <div class="row"><span>Critical Reasoning</span><span class="bar"><i style="width:66%"></i></span><span class="val">/15</span></div>
+    </div>
+    <p><strong>Critical Reasoning</strong> is the pedagogically important one: the player is rewarded for <em>rejecting</em> red-herring evidence and penalised for citing it as support — the game rewards reasoning, not clue-hoarding. Hints and wrong pivots are recorded and apply transparent score modifiers.</p>
+    <div class="callout rec">
+      <span class="lbl">Recommendation</span>
+      <p>Keep the core scorer 100% deterministic. It is defensible in a viva ("show me why I lost 5 points" → exact rule), trivially testable, and works offline. Reserve the LLM strictly for <em>explaining</em> and <em>hinting</em>, never for grading.</p>
+    </div>
+  </section>
+
+  <!-- ============ 07 ============ -->
+  <section id="s7">
+    <div class="sec-head"><div class="idx">07</div><div><h2>Case data model</h2><div class="tagline">The schema that makes 1 engine → 100 cases possible.</div></div></div>
+    <p>A case is authored as one JSON document, validated by a Pydantic/JSON-Schema contract, then normalized into the tables from §4. This is the <em>most important</em> artifact for the "data-driven" claim.</p>
+    <pre class="code"><span class="c">// case-001.json  (abridged — full doc in cases/case-001.json)</span>
+{
+  <span class="key">"code"</span>: <span class="str">"CASE-001"</span>, <span class="key">"title"</span>: <span class="str">"The Midnight Leak"</span>,
+  <span class="key">"difficulty"</span>: <span class="num">2</span>, <span class="key">"org"</span>: <span class="str">"Aurelia Systems"</span>,
+  <span class="key">"learning_objectives"</span>: [<span class="str">"username enumeration"</span>, <span class="str">"email pivoting"</span>, <span class="str">"timeline correlation"</span>],
+
+  <span class="key">"entities"</span>: [
+    { <span class="key">"id"</span>:<span class="str">"e_user_nightowl"</span>, <span class="key">"type"</span>:<span class="str">"username"</span>, <span class="key">"label"</span>:<span class="str">"nightowl_42"</span>,
+      <span class="key">"initial"</span>:<span class="num">true</span>, <span class="key">"attributes"</span>:{<span class="key">"first_seen"</span>:<span class="str">"2025-08-12"</span>} },
+    { <span class="key">"id"</span>:<span class="str">"e_email_u42"</span>, <span class="key">"type"</span>:<span class="str">"email"</span>, <span class="key">"label"</span>:<span class="str">"user42@aurelia.example"</span> },
+    { <span class="key">"id"</span>:<span class="str">"e_emp_rosa"</span>, <span class="key">"type"</span>:<span class="str">"person"</span>, <span class="key">"label"</span>:<span class="str">"R. Vance (employee)"</span>,
+      <span class="key">"is_red_herring"</span>:<span class="num">false</span>, <span class="key">"is_solution_actor"</span>:<span class="num">true</span> }
+    <span class="c">/* … 8–15 total … */</span>
+  ],
+
+  <span class="key">"relationships"</span>: [
+    { <span class="key">"id"</span>:<span class="str">"r1"</span>, <span class="key">"source"</span>:<span class="str">"e_user_nightowl"</span>, <span class="key">"target"</span>:<span class="str">"e_email_u42"</span>,
+      <span class="key">"rel_type"</span>:<span class="str">"uses"</span>, <span class="key">"is_correct"</span>:<span class="num">true</span> }
+    <span class="c">/* … 20+ total, some is_correct:false decoys … */</span>
+  ],
+
+  <span class="key">"osint_records"</span>: [
+    { <span class="key">"tool"</span>:<span class="str">"search"</span>, <span class="key">"trigger"</span>:{<span class="key">"query"</span>:<span class="str">"nightowl_42"</span>},
+      <span class="key">"reveals"</span>:{<span class="key">"entities"</span>:[<span class="str">"e_forum_profile"</span>,<span class="str">"e_devhub"</span>], <span class="key">"evidence"</span>:[<span class="str">"E-004"</span>]},
+      <span class="key">"response"</span>:<span class="str">"3 results across Aurelia Forum, Developer Hub, Photo Archive"</span> }
+  ],
+
+  <span class="key">"evidence"</span>: [
+    { <span class="key">"id"</span>:<span class="str">"E-019"</span>, <span class="key">"kind"</span>:<span class="str">"email_metadata"</span>, <span class="key">"reliability"</span>:<span class="str">"high"</span>,
+      <span class="key">"relevance_weight"</span>:<span class="num">5</span>, <span class="key">"related_entities"</span>:[<span class="str">"e_user_nightowl"</span>,<span class="str">"e_ip_203"</span>],
+      <span class="key">"supports_solution"</span>:<span class="num">true</span> }
+  ],
+
+  <span class="key">"timeline"</span>: [
+    { <span class="key">"id"</span>:<span class="str">"t7"</span>, <span class="key">"at"</span>:<span class="str">"02:17:43Z"</span>, <span class="key">"label"</span>:<span class="str">"Document published"</span>,
+      <span class="key">"actor"</span>:<span class="str">"e_emp_rosa"</span>, <span class="key">"canonical_order"</span>:<span class="num">8</span> }
+  ],
+
+  <span class="key">"hints"</span>: {
+    <span class="key">"ladder"</span>:[
+      <span class="str">"Look closely at the link between the username and the email."</span>,
+      <span class="str">"The same username appears in two independent sources."</span>,
+      <span class="str">"Compare the registration timestamps."</span>
+    ], <span class="key">"cost"</span>:[<span class="num">2</span>,<span class="num">4</span>,<span class="num">7</span>]
+  },
+
+  <span class="key">"solution_rubric"</span>: {
+    <span class="key">"actor"</span>:<span class="str">"e_emp_rosa"</span>, <span class="key">"attack_vector"</span>:<span class="str">"compromised_credentials"</span>,
+    <span class="key">"required_evidence"</span>:[<span class="str">"E-004"</span>,<span class="str">"E-009"</span>,<span class="str">"E-019"</span>],
+    <span class="key">"red_herring_evidence"</span>:[<span class="str">"E-023"</span>,<span class="str">"E-031"</span>],
+    <span class="key">"canonical_timeline"</span>:[<span class="str">"t1"</span>,<span class="str">"t2"</span>,<span class="str">"t3"</span>,<span class="str">"t4"</span>,<span class="str">"t5"</span>,<span class="str">"t6"</span>,<span class="str">"t7"</span>,<span class="str">"t8"</span>],
+    <span class="key">"weights"</span>:{<span class="key">"collection"</span>:<span class="num">25</span>,<span class="key">"relevance"</span>:<span class="num">20</span>,<span class="key">"timeline"</span>:<span class="num">20</span>,
+      <span class="key">"relationships"</span>:<span class="num">15</span>,<span class="key">"hypothesis"</span>:<span class="num">20</span>,<span class="key">"reasoning"</span>:<span class="num">15</span>}
+  }
+}</pre>
+    <div class="callout">
+      <span class="lbl">Contract discipline</span>
+      <p>The importer <em>rejects</em> a case whose <code class="inline">solution_rubric</code> references ids that don't exist, whose graph is disconnected from the initial entities, or whose canonical timeline is unorderable. Bad content fails at author-time, never at play-time.</p>
+    </div>
+  </section>
+
+  <!-- ============ 08 ============ -->
+  <section id="s8">
+    <div class="sec-head"><div class="idx">08</div><div><h2>Watson — AI mentor &amp; RAG</h2><div class="tagline">A mentor that cannot spoil the case, by construction.</div></div></div>
+    <p>Watson is a scoped, tool-calling assistant — <em>not</em> a chatbot with database access. Its cardinal rule: it may only reason over what the player has <strong>already discovered</strong>, plus the authored hint ladder. It never sees hidden nodes or the solution rubric.</p>
+    <div class="diagram">
+      <pre class="mermaid">%%{init:{'theme':'neutral','flowchart':{'curve':'basis'}}}%%
+flowchart TB
+  Q["Player question /<br/>hint request"] --> G["Guardrail layer<br/>· intent classify<br/>· sanitize input"]
+  G --> LLM["Claude API<br/>system prompt: mentor,<br/>never reveal solution"]
+  LLM -->|"tool call"| T1["get_discovered_entities"]
+  LLM -->|"tool call"| T2["get_collected_evidence"]
+  LLM -->|"tool call"| T3["get_timeline_state"]
+  LLM -->|"tool call"| T4["get_next_hint(level)"]
+  T1 & T2 & T3 & T4 --> SCOPE[("Scoped view:<br/>discovered subset only")]
+  SCOPE --> LLM
+  LLM --> A["Grounded reply /<br/>graduated hint"]
+  A -. "hint used" .-> LOG["log action →<br/>score modifier"]</pre>
+      <div class="cap">Fig 8.1 — Retrieval is constrained to the discovered subset; the hint ladder is authored, not generated.</div>
+    </div>
+    <h4 class="sub-h">Why this design</h4>
+    <ul>
+      <li><strong>No spoilers by construction</strong> — the tools physically cannot return undiscovered data, so even a jailbreak prompt yields nothing hidden. Safety is architectural, not prompt-dependent.</li>
+      <li><strong>Authored hint ladders</strong> — hint <em>content</em> is written per-case (§7). The LLM only chooses <em>which</em> level is appropriate and phrases it conversationally; each hint used is logged and costs score. This makes hinting deterministic in effect and fair to grade.</li>
+      <li><strong>Grounding &gt; hallucination</strong> — because Watson answers from retrieved case facts, it explains "what a DNS MX record means <em>here</em>" rather than inventing. Great teaching, low risk.</li>
+      <li><strong>Graceful degradation</strong> — if the API key is absent (offline demo, no budget), Watson falls back to the rule-based hint ladder directly. The MVP is fully playable with <em>zero</em> LLM calls.</li>
+    </ul>
+    <div class="callout rec">
+      <span class="lbl">Recommendation — provider</span>
+      <p>Use the <strong>Claude API</strong> (e.g. a Sonnet-class model) for Watson: first-class tool-calling maps cleanly onto the scoped-retrieval design, and you're already in the Claude ecosystem. Keep the interface behind a thin <code class="inline">LLMProvider</code> port so it's swappable and mockable in tests.</p>
+    </div>
+  </section>
+
+  <!-- ============ 09 ============ -->
+  <section id="s9">
+    <div class="sec-head"><div class="idx">09</div><div><h2>Security threat model</h2><div class="tagline">Treated as a first-class FYP chapter — STRIDE + game-specific threats.</div></div></div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Threat</th><th>Vector</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Spoofing</strong></td><td>Credential stuffing, session theft</td><td>Argon2id hashing, short JWT + rotating refresh in httpOnly/SameSite cookie, login rate-limit + lockout.</td></tr>
+          <tr><td><strong>Tampering</strong></td><td>Client forges discovered nodes / score</td><td>Server owns fog-of-war; scoring runs server-side from the append-only action log. Client state is untrusted.</td></tr>
+          <tr><td><strong>Repudiation</strong></td><td>Disputed actions / cheating claims</td><td>Immutable <code class="inline">investigation_actions</code> audit trail with timestamps; admin audit log.</td></tr>
+          <tr><td><strong>Info disclosure</strong></td><td>Leaking the case solution</td><td>Solution rubric &amp; hidden nodes never serialized to player responses; IDOR-proofed by owner checks on every <code class="inline">/investigations/{id}</code> route.</td></tr>
+          <tr><td><strong>DoS</strong></td><td>Lookup / hint spam, LLM cost abuse</td><td>Redis token-bucket per user + per route; hint budget per case; Nginx connection limits.</td></tr>
+          <tr><td><strong>Elevation</strong></td><td>Player reaching admin routes</td><td>RBAC dependency on every admin endpoint; deny-by-default; role checked server-side, never inferred from client.</td></tr>
+          <tr><td><strong>SSRF (game-specific)</strong></td><td>"OSINT tools" tricked into real requests</td><td><strong>By design there is no outbound HTTP in the tools.</strong> Lookups only pattern-match in-DB <code class="inline">osint_records</code>. No URL, host or IP from user input ever reaches a network client.</td></tr>
+          <tr><td><strong>Prompt injection</strong></td><td>Player text steering Watson to reveal answers</td><td>Scoped retrieval (can't fetch hidden data), fixed system prompt, input sanitization, tool-output allow-listing. Case data is trusted-authored; player input is quarantined.</td></tr>
+          <tr><td><strong>Injection / XSS</strong></td><td>SQLi, stored XSS in notes</td><td>Parameterized ORM queries only, Pydantic validation, output-encoded React, strict CSP, secure headers.</td></tr>
+          <tr><td><strong>File handling</strong></td><td>Malicious evidence uploads</td><td>Evidence images are admin-authored fixtures, type/size-validated, served from a non-executable path. Players never upload.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <span class="lbl">Non-negotiable safety posture</span>
+      <p>The application <strong>never</strong> queries a real person, domain, IP, or social account. All targets are fictional or reserved examples (<code class="inline">*.example</code>, RFC-5737 doc IP ranges). No scraping, no credential attacks, no unauthorized scanning, no arbitrary command execution from player input. This is stated in-app and in the README — it is central to the project's ethics, not a footnote.</p>
+    </div>
+  </section>
+
+  <!-- ============ 10 ============ -->
+  <section id="s10">
+    <div class="sec-head"><div class="idx">10</div><div><h2>Repository structure</h2><div class="tagline">A monorepo a reviewer can navigate in 30 seconds.</div></div></div>
+    <pre class="code">internet-detective/
+├─ <span class="key">frontend/</span>                 <span class="c"># React + TS + Vite</span>
+│  ├─ src/
+│  │  ├─ app/               <span class="c"># router, providers, layout</span>
+│  │  ├─ features/          <span class="c"># workspace, cases, evidence, timeline…</span>
+│  │  │  └─ workspace/       <span class="c"># React Flow canvas, tool panels</span>
+│  │  ├─ components/        <span class="c"># design-system primitives</span>
+│  │  ├─ lib/api/           <span class="c"># typed client, TanStack Query hooks</span>
+│  │  └─ store/             <span class="c"># Zustand session slices</span>
+│  └─ tests/
+├─ <span class="key">backend/</span>                  <span class="c"># FastAPI</span>
+│  ├─ app/
+│  │  ├─ api/v1/            <span class="c"># routers (auth, cases, investigations…)</span>
+│  │  ├─ core/             <span class="c"># config, security, deps, logging</span>
+│  │  ├─ domain/            <span class="c"># engine, evaluation, watson (pure logic)</span>
+│  │  ├─ models/            <span class="c"># SQLAlchemy</span>
+│  │  ├─ schemas/           <span class="c"># Pydantic</span>
+│  │  ├─ repositories/      <span class="c"># data access</span>
+│  │  └─ services/          <span class="c"># orchestration</span>
+│  ├─ alembic/              <span class="c"># migrations</span>
+│  └─ tests/                <span class="c"># unit · integration · security · game-logic</span>
+├─ <span class="key">cases/</span>                    <span class="c"># authored case JSON + JSON-Schema + validator</span>
+│  ├─ case-001.json
+│  └─ schema/case.schema.json
+├─ <span class="key">docs/</span>                     <span class="c"># architecture, database, api, security, game-engine, ai, research</span>
+├─ <span class="key">infra/</span>                    <span class="c"># Dockerfiles, nginx.conf, compose</span>
+├─ docker-compose.yml
+├─ .env.example
+└─ README.md</pre>
+    <p>The <code class="inline">domain/</code> layer holds framework-free pure logic (engine, evaluation, hint ladder) — importable in tests without a DB or web server, which is where the interesting game-logic tests live.</p>
+  </section>
+
+  <!-- ============ 11 ============ -->
+  <section id="s11">
+    <div class="sec-head"><div class="idx">11</div><div><h2>MVP definition</h2><div class="tagline">One case, fully playable, end-to-end — the thin vertical slice.</div></div></div>
+    <p>The MVP proves the thesis: a data-driven engine renders and grades a real case. It is a <em>complete loop</em>, narrow but deep.</p>
+    <div class="grid2">
+      <div class="card"><h5>✓ In the MVP</h5><p>Auth + RBAC · Case #001 loaded from JSON · dashboard · cinematic brief · React Flow workspace · simulated Search / Email / Domain / IP lookups · evidence collect+tag+link · timeline builder · one hypothesis · submit → deterministic 6-dim score + post-mortem · rule-based Watson hint ladder · action logging · Dockerized.</p></div>
+      <div class="card"><h5>✕ Deferred (designed, not built)</h5><p>Visual admin editor (author via JSON) · Detective Academy · achievements &amp; streaks · image/metadata tool · multiple hypotheses · full analytics dashboards · Celery/background jobs · LLM-phrased Watson · leaderboard polish.</p></div>
+    </div>
+    <div class="callout rec">
+      <span class="lbl">Why this is the right MVP</span>
+      <p>It demonstrates <em>every</em> architectural claim — graph, fog-of-war, deterministic scoring, data-driven cases, safe simulated OSINT — in a form you can demo live in a viva in five minutes. Everything deferred is additive breadth over a proven core, which is exactly the story examiners want: "the hard part works; the rest is scope."</p>
+    </div>
+  </section>
+
+  <!-- ============ 12 ============ -->
+  <section id="s12">
+    <div class="sec-head"><div class="idx">12</div><div><h2>Implementation roadmap</h2><div class="tagline">Your 9 phases, sequenced and de-risked for one student.</div></div></div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Phase</th><th>Delivers</th><th>Milestone</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1 · Foundation</strong></td><td>Repo, Docker Compose, Postgres, auth + RBAC, design-system shell, CI.</td><td>Login works; empty dashboard renders. <span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>2 · Investigation engine</strong></td><td>Case schema + importer, seed Case #001, fog-of-war state, React Flow canvas, lookup endpoint.</td><td>Discover entities by searching. <span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>3 · Game mechanics</strong></td><td>Evidence, timeline, hypothesis, submission, deterministic scorer, XP/rank.</td><td>Full loop: brief → submit → score. <span class="tag mvp">MVP</span></td></tr>
+          <tr><td><strong>4 · Simulated OSINT</strong></td><td>Search, Email, Domain/DNS, IP tool UIs over case datasets; metadata viewer.</td><td>All four tools + one more case. <span class="tag mvp">MVP</span>/<span class="tag later">LATER</span></td></tr>
+          <tr><td><strong>5 · Watson AI</strong></td><td>Scoped retrieval tools, hint ladder, Claude integration + offline fallback.</td><td>Contextual, non-spoiling hints. <span class="tag stretch">STRETCH</span></td></tr>
+          <tr><td><strong>6 · Admin</strong></td><td>Visual case editor mirroring the board; evidence/timeline/solution config.</td><td>Author a case without JSON. <span class="tag later">LATER</span></td></tr>
+          <tr><td><strong>7 · Analytics</strong></td><td>Player skill radar; admin case metrics; learning progress.</td><td>Charts from real action logs. <span class="tag later">LATER</span></td></tr>
+          <tr><td><strong>8 · Polish</strong></td><td>Motion, onboarding, a11y, responsive, empty/error/loading states.</td><td>Demo-grade UX. <span class="tag later">LATER</span></td></tr>
+          <tr><td><strong>9 · Evaluation</strong></td><td>User study, metrics collection, research write-up.</td><td>Research chapter + data. <span class="tag later">LATER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="lbl">Sequencing advice</span>
+      <p>Phases 1–3 are the critical path to a defensible project — protect them. Treat Watson (5), Admin (6) and the full user study (9) as independent modules you slot in as time allows; none blocks a passing, demonstrable build. Build <strong>Case #002 early</strong> (in Phase 4) — a second case is the cheapest, most convincing proof that the engine is truly data-driven.</p>
+    </div>
+  </section>
+
+  <!-- ============ 13 ============ -->
+  <section id="s13">
+    <div class="sec-head"><div class="idx">13</div><div><h2>Case #001 — The Midnight Leak</h2><div class="tagline">The first fully-designed, logically-consistent playable case.</div></div></div>
+    <p><strong>Scenario.</strong> <em>Aurelia Systems</em> (fictional) discovers a confidential internal product spec published on a fictional file-sharing service at <strong>02:17 UTC</strong>. The player must identify the source of the leak and reconstruct the events. The truth: an employee's credentials were phished; the attacker used the <code class="inline">nightowl_42</code> persona across independent services, and metadata ties the exfiltration to one IP and one account.</p>
+    <h4 class="sub-h">Entities (10)</h4>
+    <div class="twrap"><table>
+      <thead><tr><th>Id</th><th>Type</th><th>Label</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>e_user_nightowl</code></td><td>username</td><td>nightowl_42</td><td>initial clue · pivot hub</td></tr>
+        <tr><td><code>e_email_u42</code></td><td>email</td><td>user42@aurelia.example</td><td>initial clue</td></tr>
+        <tr><td><code>e_alt_nocturnal</code></td><td>username</td><td>nocturnal42</td><td>same actor, 2nd source</td></tr>
+        <tr><td><code>e_domain</code></td><td>domain</td><td>aurelia.example</td><td>infrastructure</td></tr>
+        <tr><td><code>e_ip_203</code></td><td>ip</td><td>203.0.113.42</td><td>exfil origin (RFC-5737)</td></tr>
+        <tr><td><code>e_emp_rosa</code></td><td>person</td><td>R. Vance (employee)</td><td><strong>solution actor</strong></td></tr>
+        <tr><td><code>e_emp_dana</code></td><td>person</td><td>D. Okoro (employee)</td><td>red herring suspect</td></tr>
+        <tr><td><code>e_file</code></td><td>file</td><td>roadmap_v3.pdf</td><td>leaked document</td></tr>
+        <tr><td><code>e_forum_profile</code></td><td>social</td><td>Aurelia Forum: nightowl_42</td><td>discovered via search</td></tr>
+        <tr><td><code>e_phish_domain</code></td><td>domain</td><td>aurelia-sso.example</td><td>look-alike phishing infra</td></tr>
+      </tbody>
+    </table></div>
+    <div class="grid3">
+      <div class="card"><h5>Evidence</h5><p><strong>18 items</strong> — login records, email metadata (E-019), DNS/WHOIS history, file metadata, forum timestamps. Reliability high/med/low. Relevance-weighted.</p></div>
+      <div class="card"><h5>Relationships</h5><p><strong>22 edges</strong> — <code class="inline">uses</code>, <code class="inline">accessed</code>, <code class="inline">hosted_on</code>, <code class="inline">authored</code>. A few decoy edges (<code class="inline">is_correct:false</code>) tempt wrong conclusions.</p></div>
+      <div class="card"><h5>Timeline</h5><p><strong>8 events</strong> 00:41→02:17: login attempt, auth, doc access, download, external connection, email, publish. One deliberate gap.</p></div>
+    </div>
+    <h4 class="sub-h">The four red herrings (rewarded for rejecting)</h4>
+    <ol>
+      <li><strong>D. Okoro</strong> — logged in near the incident but from an internal IP with a benign, fully-accounted timeline. Superficially suspicious, cleanly exonerated by cross-referencing login source.</li>
+      <li><strong>E-023</strong> — a forum post "confessing" boredom at work; emotionally suggestive, evidentially worthless (unrelated timestamp).</li>
+      <li><strong>Legit <code class="inline">aurelia.example</code> MX record</strong> — normal infra that looks alarming to a novice; the real signal is the look-alike <code class="inline">aurelia-sso.example</code>.</li>
+      <li><strong>E-031</strong> — a download event that predates the document's creation (a timestamp conflict that <em>disproves</em> a tempting theory).</li>
+    </ol>
+    <h4 class="sub-h">Solution &amp; possible hypotheses</h4>
+    <p><strong>Correct:</strong> R. Vance's credentials were phished via <code class="inline">aurelia-sso.example</code>; the attacker, operating as <code class="inline">nightowl_42</code>/<code class="inline">nocturnal42</code>, authenticated from <code class="inline">203.0.113.42</code>, accessed and downloaded <code class="inline">roadmap_v3.pdf</code>, and published it. Supported by E-004, E-009, E-019 + the correlated username across two sources + the coherent timeline. The engine accepts a <em>reasoned</em> case (right actor + vector + evidence + timeline), not a lucky name-guess — and docks points for citing any red herring as support. Competing hypotheses (insider D. Okoro; accidental disclosure) are deliberately constructible but refutable with the evidence present.</p>
+    <div class="callout">
+      <span class="lbl">Correlation is forced</span>
+      <p>The email is unreachable from the username in one hop — the player must find <code class="inline">nightowl_42</code> in the forum <em>and</em> the developer hub, notice the <code class="inline">nocturnal42</code> alias, then pivot the alias to the email, then the email to the IP. Multiple independent clues must line up. That is the OSINT methodology the game teaches.</p>
+    </div>
+  </section>
+
+  <!-- ============ 14 ============ -->
+  <section id="s14">
+    <div class="sec-head"><div class="idx">14</div><div><h2>Technology choices</h2><div class="tagline">Your proposed stack — endorsed, with three deliberate simplifications.</div></div></div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Choice</th><th>Why (FYP lens)</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>React + TypeScript + Vite</td><td>Type-safe, fast HMR, ubiquitous — strong interview signal.</td></tr>
+          <tr><td>Styling</td><td>Tailwind + small design-system layer</td><td>Consistent premium UI fast; tokens enforce the "Linear/Arc" look.</td></tr>
+          <tr><td>Graph canvas</td><td><strong>React Flow</strong></td><td>Purpose-built node/edge canvas: drag, pan, zoom, custom nodes — the workspace centerpiece. Building this by hand would waste weeks.</td></tr>
+          <tr><td>Server state</td><td>TanStack Query + Zustand</td><td>Query for server cache; Zustand only for ephemeral session/UI state. Avoids Redux boilerplate.</td></tr>
+          <tr><td>Charts</td><td>Recharts</td><td>Declarative, React-native, enough for skill radar + admin metrics.</td></tr>
+          <tr><td>Backend</td><td>FastAPI + Pydantic</td><td>Async, typed, auto OpenAPI docs — a viva-ready API explorer for free.</td></tr>
+          <tr><td>ORM / DB</td><td>SQLAlchemy 2.0 + PostgreSQL</td><td>JSONB + recursive CTEs cover the graph; mature, well-understood.</td></tr>
+          <tr><td>Cache/limits</td><td>Redis</td><td>Sessions, rate-limit buckets, hot caches.</td></tr>
+          <tr><td>AI</td><td>Claude API behind an <code>LLMProvider</code> port</td><td>Tool-calling fits scoped retrieval; swappable + mockable.</td></tr>
+          <tr><td>Infra</td><td>Docker Compose + Nginx</td><td>One-command reproducible demo — huge for a viva on any machine.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h4 class="sub-h">Three trade-offs, decided</h4>
+    <div class="callout rec">
+      <span class="lbl">Graph storage — Postgres, not Neo4j</span>
+      <p>A dedicated graph DB looks impressive but adds an operational dependency, a second query language, and sync complexity for a graph that is small and bounded per case. Postgres adjacency lists + recursive CTEs handle every pivot we need. <strong>Recommend relational</strong>; mention Neo4j in the report as a scaling option.</p>
+    </div>
+    <div class="callout rec">
+      <span class="lbl">Background jobs — FastAPI BackgroundTasks for MVP, Celery later</span>
+      <p>Celery + a broker + a worker is real infra to babysit. Nothing in the MVP needs distributed async — scoring is synchronous and fast. <strong>Start with BackgroundTasks</strong>; introduce Celery only if/when analytics aggregation or bulk case imports justify it (and cite that as a considered evolution).</p>
+    </div>
+    <div class="callout rec">
+      <span class="lbl">Scoring — deterministic engine, not LLM-as-judge</span>
+      <p>An LLM grader is non-reproducible, hard to defend, and costs money per submission. A pure rule engine is testable, explainable to an examiner line-by-line, and free. <strong>Deterministic core</strong>; LLM only for optional qualitative phrasing of the post-mortem.</p>
+    </div>
+  </section>
+
+  <!-- ============ DECISIONS ============ -->
+  <section id="decisions">
+    <div class="sec-head"><div class="idx">→</div><div><h2>Decisions for you</h2><div class="tagline">Four calls that shape what I build first. Everything else I'll default sensibly.</div></div></div>
+    <ol>
+      <li><strong>Watson in the MVP?</strong> I recommend shipping the <em>rule-based hint ladder</em> in MVP (works offline, no cost) and treating LLM phrasing as a stretch. Confirm, or ask me to wire the Claude API from the start.</li>
+      <li><strong>Research/user-study depth.</strong> The evaluation chapter (Phase 9) is a strong academic differentiator but time-costly. Do you want the app instrumented for a formal pre/post user study from day one, or is a lighter "analytics dashboard" sufficient for your rubric?</li>
+      <li><strong>Admin editor priority.</strong> MVP authors cases via validated JSON + seed. Is the <em>visual</em> admin case editor (Phase 6) something your examiners will expect to see demoed, or acceptable as "designed, future work"?</li>
+      <li><strong>Deployment target.</strong> Local Docker Compose for the viva is the safe default. Do you also need a hosted public URL (which adds cost + a bit of ops), or is a local/loopback demo fine?</li>
+    </ol>
+    <div class="callout">
+      <span class="lbl">Next step</span>
+      <p>Review the above and tell me what to adjust. On your approval — and your four answers — I'll begin <strong>Phase 1</strong>: repo scaffold, Docker Compose, Postgres schema + first migration, auth + RBAC, and the design-system shell. I'll deliver complete, working files, incrementally, and we'll build the loop from the foundation up.</p>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="safe">
+    <strong>Safety &amp; privacy statement.</strong> All investigation targets — identities, usernames, emails, domains, IPs, organizations, files and social profiles — are fictional or reserved examples (<code class="inline">*.example</code> domains, RFC-5737 documentation IP ranges) created solely for this educational simulation. Internet Detective performs no real-world reconnaissance, scraping, credential testing, scanning, or investigation of real private individuals. It teaches OSINT <em>methodology</em> and analytical reasoning in a sandbox — nothing more.
+  </div>
+  Internet Detective · Design Specification v1.0 · B.Tech CSE Final-Year Project · 2026-09-17 · Awaiting approval before implementation.
+</footer>
+
+<script>
+(function(){
+  var btn=document.getElementById('themeBtn');
+  var root=document.documentElement;
+  function current(){
+    var s=root.getAttribute('data-theme');
+    if(s) return s;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  }
+  btn.addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+  });
+})();
+</script>

@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* "SOC investigation board" — dark premium */
+  --bg: #0d1116;
+  --surface: #141a22;
+  --surface-2: #1b2230;
+  --border: #29323f;
+  --border-strong: #3a4657;
+  --text: #e7eaef;
+  --muted: #97a1b0;
+  --faint: #6f7b8b;
+  --accent: #eab04d;
+  --accent-2: #77aec4;
+  --good: #57b894;
+  --warn: #eab04d;
+  --bad: #db6a63;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer base {
+  ::selection {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .field-label {
+    @apply mb-1.5 block font-mono text-[11px] uppercase tracking-[0.12em] text-muted;
+  }
+  .input {
+    @apply w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-text
+      placeholder:text-faint focus:border-accent focus:outline-none;
+  }
+}
