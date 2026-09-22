@@ -13,6 +13,9 @@ os.environ["AUTH_RATE_LIMIT"] = "1000"
 os.environ["REFRESH_COOKIE_SECURE"] = "false"
 os.environ["ENV"] = "test"
 
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+
 import pytest  # noqa: E402
 import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
@@ -26,6 +29,11 @@ from app.db.base import Base  # noqa: E402
 from app.db.session import get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models.user import User  # noqa: E402
+from app.services.case_importer import import_case  # noqa: E402
+
+CASE_001 = json.loads(
+    (Path(__file__).resolve().parents[1] / "cases" / "case-001.json").read_text(encoding="utf-8")
+)
 
 
 @pytest_asyncio.fixture
@@ -62,6 +70,15 @@ async def client(db_engine, session_factory):
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def imported_case(session_factory):
+    """Import Case #001 into the test database and return its code."""
+    async with session_factory() as session:
+        await import_case(session, CASE_001)
+        await session.commit()
+    return CASE_001["code"]
 
 
 @pytest_asyncio.fixture

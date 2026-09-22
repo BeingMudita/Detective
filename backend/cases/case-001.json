@@ -1,0 +1,104 @@
+{
+  "code": "CASE-001",
+  "title": "The Midnight Leak",
+  "difficulty": 2,
+  "org": "Aurelia Systems",
+  "summary": "A confidential internal roadmap (roadmap_v3.pdf) appeared on a public file-sharing service at 02:17 UTC. Aurelia Systems has handed you the initial evidence package. Identify the source of the leak and reconstruct what happened. Every identity, domain and address in this case is fictional.",
+  "learning_objectives": [
+    "username enumeration across independent sources",
+    "email intelligence and account attribution",
+    "DNS and look-alike infrastructure analysis",
+    "correlating login origin with company infrastructure",
+    "distinguishing evidence from red herrings"
+  ],
+
+  "entities": [
+    { "ext_id": "e_user_nightowl", "type": "username", "label": "nightowl_42", "initial": true, "attributes": { "first_seen": "2025-08-12" } },
+    { "ext_id": "e_email_u42", "type": "email", "label": "user42@aurelia.example", "initial": true },
+    { "ext_id": "e_domain", "type": "domain", "label": "aurelia.example", "initial": true },
+    { "ext_id": "e_ip_203", "type": "ip", "label": "203.0.113.42", "initial": true },
+    { "ext_id": "e_file", "type": "file", "label": "roadmap_v3.pdf", "initial": true },
+    { "ext_id": "e_forum_profile", "type": "social", "label": "Aurelia Forum: nightowl_42" },
+    { "ext_id": "e_devhub_profile", "type": "social", "label": "Developer Hub: nocturnal42" },
+    { "ext_id": "e_alt_nocturnal", "type": "username", "label": "nocturnal42" },
+    { "ext_id": "e_phish_domain", "type": "domain", "label": "aurelia-sso.example" },
+    { "ext_id": "e_emp_rosa", "type": "person", "label": "R. Vance" },
+    { "ext_id": "e_emp_dana", "type": "person", "label": "D. Okoro", "red_herring": true }
+  ],
+
+  "relationships": [
+    { "ext_id": "r1", "source": "e_user_nightowl", "target": "e_email_u42", "rel_type": "uses", "correct": true },
+    { "ext_id": "r2", "source": "e_user_nightowl", "target": "e_alt_nocturnal", "rel_type": "alias_of", "correct": true },
+    { "ext_id": "r3", "source": "e_email_u42", "target": "e_emp_rosa", "rel_type": "belongs_to", "correct": true },
+    { "ext_id": "r4", "source": "e_user_nightowl", "target": "e_ip_203", "rel_type": "authenticated_from", "correct": true },
+    { "ext_id": "r5", "source": "e_file", "target": "e_user_nightowl", "rel_type": "accessed_by", "correct": true },
+    { "ext_id": "r6", "source": "e_ip_203", "target": "e_phish_domain", "rel_type": "hosts", "correct": true },
+    { "ext_id": "r7", "source": "e_emp_rosa", "target": "e_phish_domain", "rel_type": "phished_via", "correct": true },
+    { "ext_id": "r8", "source": "e_forum_profile", "target": "e_user_nightowl", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r9", "source": "e_devhub_profile", "target": "e_alt_nocturnal", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r10", "source": "e_emp_dana", "target": "e_file", "rel_type": "accessed_by", "correct": false },
+    { "ext_id": "r11", "source": "e_email_u42", "target": "e_emp_dana", "rel_type": "belongs_to", "correct": false },
+    { "ext_id": "r12", "source": "e_domain", "target": "e_ip_203", "rel_type": "resolves_to", "correct": false }
+  ],
+
+  "evidence": [
+    { "ext_id": "E-001", "kind": "incident_report", "source": "Aurelia SOC", "reliability": "high", "relevance": 2, "initial": true, "content": "Confidential roadmap_v3.pdf appeared on a public file-sharing service at 02:17:43 UTC.", "related": ["e_file"] },
+    { "ext_id": "E-002", "kind": "file_metadata", "source": "File Analysis", "reliability": "high", "relevance": 3, "initial": true, "content": "roadmap_v3.pdf — author field 'nightowl_42'; created 01:58 UTC; internal document template.", "related": ["e_file", "e_user_nightowl"] },
+    { "ext_id": "E-003", "kind": "auth_log", "source": "Corporate SSO", "reliability": "high", "relevance": 3, "initial": true, "content": "Successful authentication for account user42 at 00:43 UTC from 203.0.113.42.", "related": ["e_email_u42", "e_ip_203"] },
+    { "ext_id": "E-004", "kind": "search_result", "source": "Public Search", "reliability": "medium", "relevance": 4, "content": "Handle 'nightowl_42' appears on the Aurelia Community Forum and, as 'nocturnal42', on the Developer Hub. Also a Photo Archive upload.", "related": ["e_user_nightowl", "e_forum_profile", "e_devhub_profile", "e_alt_nocturnal"], "supports_solution": true },
+    { "ext_id": "E-005", "kind": "profile", "source": "Aurelia Forum", "reliability": "medium", "relevance": 2, "content": "nightowl_42 — joined 2025-03; bio 'Systems engineer'; last active 02:10 UTC.", "related": ["e_forum_profile"] },
+    { "ext_id": "E-006", "kind": "profile", "source": "Photo Archive", "reliability": "low", "relevance": 1, "content": "Upload attributed to nightowl_42; EXIF stripped, no useful metadata.", "related": ["e_forum_profile", "e_user_nightowl"] },
+    { "ext_id": "E-009", "kind": "email_intel", "source": "Corporate Directory", "reliability": "high", "relevance": 4, "content": "user42@aurelia.example is the mailbox of employee R. Vance; provisioned 2025-08-12.", "related": ["e_email_u42", "e_emp_rosa"], "supports_solution": true },
+    { "ext_id": "E-010", "kind": "auth_log", "source": "Corporate SSO", "reliability": "high", "relevance": 3, "content": "Failed logins for user42 at 00:41 UTC from 203.0.113.42, followed by success at 00:43 UTC.", "related": ["e_email_u42", "e_ip_203"] },
+    { "ext_id": "E-014", "kind": "dns_record", "source": "DNS Intelligence", "reliability": "high", "relevance": 3, "content": "aurelia.example — A, MX (mail.aurelia.example), NS records normal. Passive DNS shows a look-alike 'aurelia-sso.example' first seen 2026-05-10.", "related": ["e_domain", "e_phish_domain"] },
+    { "ext_id": "E-016", "kind": "ip_intel", "source": "Network Intelligence", "reliability": "high", "relevance": 4, "content": "203.0.113.42 — ASN 'Example Networks', geo 'Fictional Republic'. Currently hosts aurelia-sso.example. It is NOT a registered Aurelia Systems egress address.", "related": ["e_ip_203", "e_phish_domain"], "supports_solution": true },
+    { "ext_id": "E-019", "kind": "email_metadata", "source": "Corporate Mail Archive", "reliability": "high", "relevance": 5, "content": "Message from user42 at 01:42 UTC; originating IP 203.0.113.42; X-Mailer header 'nightowl'.", "related": ["e_user_nightowl", "e_ip_203", "e_email_u42"], "supports_solution": true },
+    { "ext_id": "E-020", "kind": "whois", "source": "Domain Registration", "reliability": "high", "relevance": 5, "content": "aurelia-sso.example registered 2026-05-10 via a privacy proxy and serves a cloned Aurelia SSO login page. Not owned by Aurelia Systems.", "related": ["e_phish_domain", "e_emp_rosa"], "supports_solution": true },
+    { "ext_id": "E-023", "kind": "forum_post", "source": "Aurelia Forum", "reliability": "low", "relevance": 0, "content": "Post by 'd_okoro': 'so bored at work today, might just leak the roadmap lol' (2025-06-02).", "related": ["e_emp_dana"] },
+    { "ext_id": "E-024", "kind": "identity_match", "source": "People Search", "reliability": "low", "relevance": 1, "content": "Weak, unverified match: initials 'D.O.' linked to the handle 'nightowl' in an unrelated 2019 data set.", "related": ["e_emp_dana"] },
+    { "ext_id": "E-031", "kind": "file_event", "source": "DLP Logs", "reliability": "medium", "relevance": 0, "content": "A download of 'roadmap_v3.pdf' is logged at 01:12 UTC — earlier than the document's creation time (01:58 UTC). The timestamps are inconsistent.", "related": ["e_file"] }
+  ],
+
+  "osint_records": [
+    { "tool": "search", "query": "nightowl_42", "reveals": { "entities": ["e_forum_profile", "e_devhub_profile", "e_alt_nocturnal"], "evidence": ["E-004", "E-005", "E-006"] }, "response": "3 results across the Aurelia Community Forum, the Developer Hub (handle 'nocturnal42'), and a Photo Archive upload." },
+    { "tool": "email", "query": "user42@aurelia.example", "reveals": { "entities": ["e_emp_rosa"], "evidence": ["E-009", "E-019", "E-010"] }, "response": "Mailbox resolves to an employee; message metadata and related login records returned." },
+    { "tool": "identity", "query": "nightowl_42", "reveals": { "entities": ["e_emp_dana"], "evidence": ["E-023", "E-024"] }, "response": "A weak, unverified identity match surfaced. Treat with caution." },
+    { "tool": "domain", "query": "aurelia.example", "reveals": { "entities": ["e_phish_domain"], "evidence": ["E-014", "E-031"] }, "response": "DNS records and historical infrastructure returned." },
+    { "tool": "ip", "query": "203.0.113.42", "reveals": { "entities": [], "evidence": ["E-016"] }, "response": "ASN, geolocation and current hosting intelligence returned." },
+    { "tool": "domain", "query": "aurelia-sso.example", "reveals": { "entities": [], "evidence": ["E-020"] }, "response": "Registration and hosting details for the look-alike domain returned." },
+    { "tool": "file", "query": "roadmap_v3.pdf", "reveals": { "entities": [], "evidence": ["E-002"] }, "response": "Embedded file metadata extracted." }
+  ],
+
+  "timeline": [
+    { "ext_id": "t1", "at": "00:41", "label": "Failed login attempts for user42", "actor": "e_ip_203", "order": 1, "source": "Corporate SSO" },
+    { "ext_id": "t2", "at": "00:43", "label": "Successful authentication for user42", "actor": "e_ip_203", "order": 2, "source": "Corporate SSO" },
+    { "ext_id": "t3", "at": "00:47", "label": "Confidential document accessed", "actor": "e_user_nightowl", "order": 3, "source": "DLP" },
+    { "ext_id": "t4", "at": "00:52", "label": "Document downloaded", "actor": "e_user_nightowl", "order": 4, "source": "DLP" },
+    { "ext_id": "t5", "at": "01:08", "label": "External connection established", "actor": "e_ip_203", "order": 5, "source": "Netflow" },
+    { "ext_id": "t6", "at": "01:42", "label": "Email sent from user42", "actor": "e_email_u42", "order": 6, "source": "Mail Archive" },
+    { "ext_id": "t7", "at": "01:58", "label": "roadmap_v3.pdf created", "actor": "e_user_nightowl", "order": 7, "source": "File metadata" },
+    { "ext_id": "t8", "at": "02:17", "label": "Document published on file-sharing service", "actor": "e_user_nightowl", "order": 8, "source": "Incident report" }
+  ],
+
+  "hints": [
+    { "level": 1, "body": "Look for connections between the identities you have already discovered.", "cost": 2 },
+    { "level": 2, "body": "The same handle appears in two independent sources under two different names.", "cost": 4 },
+    { "level": 3, "body": "Compare where the successful login originated with the company's own infrastructure.", "cost": 7 }
+  ],
+
+  "solution": {
+    "actor": "e_emp_rosa",
+    "attack_vector": "compromised_credentials",
+    "required_evidence": ["E-004", "E-009", "E-019", "E-016", "E-020"],
+    "red_herring_evidence": ["E-023", "E-031"],
+    "canonical_timeline": ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8"],
+    "weights": {
+      "collection": 20,
+      "relevance": 20,
+      "timeline": 20,
+      "relationships": 15,
+      "hypothesis": 15,
+      "reasoning": 10
+    }
+  }
+}

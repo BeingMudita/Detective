@@ -1,17 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
-import { Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { logout } from "../../lib/api/auth";
 import { useAuthStore } from "../../store/authStore";
 import { Button } from "../ui/Button";
 import { Logo } from "../ui/Logo";
 
 const NAV = [
-  { label: "Dashboard", active: true },
-  { label: "Cases", active: false },
-  { label: "Evidence", active: false },
-  { label: "Timeline", active: false },
-  { label: "Academy", active: false },
+  { label: "Dashboard", to: "/" },
+  { label: "Cases", to: "/cases" },
 ];
+
+const SOON = ["Evidence", "Timeline", "Academy"];
 
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
@@ -31,20 +30,28 @@ export function AppLayout() {
         </div>
         <nav className="mt-8 flex flex-col gap-1">
           {NAV.map((item) => (
-            <span
+            <NavLink
               key={item.label}
-              className={`rounded-lg px-3 py-2 text-sm ${
-                item.active
-                  ? "bg-surface-2 font-medium text-text"
-                  : "cursor-not-allowed text-faint"
-              }`}
+              to={item.to}
+              end={item.to === "/"}
+              className={({ isActive }) =>
+                `rounded-lg px-3 py-2 text-sm ${
+                  isActive
+                    ? "bg-surface-2 font-medium text-text"
+                    : "text-muted hover:bg-surface-2 hover:text-text"
+                }`
+              }
             >
               {item.label}
-              {!item.active && (
-                <span className="ml-2 font-mono text-[10px] uppercase tracking-wider">
-                  soon
-                </span>
-              )}
+            </NavLink>
+          ))}
+          {SOON.map((label) => (
+            <span
+              key={label}
+              className="cursor-not-allowed rounded-lg px-3 py-2 text-sm text-faint"
+            >
+              {label}
+              <span className="ml-2 font-mono text-[10px] uppercase tracking-wider">soon</span>
             </span>
           ))}
         </nav>

@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { useAuthStore } from "../../store/authStore";
 
@@ -46,15 +48,14 @@ export function DashboardPage() {
         <span className="grid h-12 w-12 place-items-center rounded-xl bg-surface-2 text-2xl">
           🗂
         </span>
-        <h2 className="font-serif text-xl font-medium">No active investigations</h2>
+        <h2 className="font-serif text-xl font-medium">Your first case is waiting</h2>
         <p className="max-w-md text-sm text-muted">
-          The case engine goes live in Phase 3. Case&nbsp;#001 — “The Midnight Leak” —
-          will be your first assignment: correlate clues, collect evidence, reconstruct
-          the timeline, and defend your conclusion.
+          Case&nbsp;#001 — “The Midnight Leak”. Correlate clues across simulated OSINT sources,
+          collect evidence, connect the identities, and name who leaked the roadmap.
         </p>
-        <span className="mt-1 rounded-full border border-border px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-faint">
-          Coming in Phase 3
-        </span>
+        <Link to="/cases" className="mt-2">
+          <Button>Open the case files →</Button>
+        </Link>
       </Card>
     </motion.div>
   );

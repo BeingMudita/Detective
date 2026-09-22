@@ -2,7 +2,10 @@ FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=10 \
+    PIP_PREFER_BINARY=1
 
 WORKDIR /app
 
@@ -12,7 +15,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Retries + long timeout so a slow/flaky connection doesn't fail the build.
+RUN pip install --timeout 120 --retries 10 -r requirements.txt
 
 COPY . .
 RUN chmod +x entrypoint.sh

@@ -53,3 +53,39 @@ body {
       placeholder:text-faint focus:border-accent focus:outline-none;
   }
 }
+
+/* React Flow — dark theme overrides */
+.react-flow__edge-path {
+  stroke: var(--accent-2);
+  stroke-width: 1.5;
+}
+.react-flow__connectionline path,
+.react-flow__connection-path {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.react-flow__edge-textbg {
+  fill: var(--surface);
+}
+.react-flow__edge-text {
+  fill: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+.react-flow__controls {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+.react-flow__controls-button {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.react-flow__controls-button:hover {
+  background: var(--surface-2);
+}
+.react-flow__controls-button svg {
+  fill: var(--muted);
+}
