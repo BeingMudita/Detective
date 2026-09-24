@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     )
 
     # ── meta ──
-    PROJECT_NAME: str = "Internet Detective"
+    PROJECT_NAME: str = "OSINT Sandbox "
     API_V1_PREFIX: str = "/api/v1"
     ENV: str = "development"
 

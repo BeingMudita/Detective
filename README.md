@@ -1,4 +1,4 @@
-# 🕵️ Internet Detective
+# 🕵️ OSINT Sandbox 
 
 A controlled **OSINT investigation simulation** — players crack fictional
 cybersecurity mysteries by discovering entities, correlating evidence,

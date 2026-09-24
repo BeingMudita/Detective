@@ -1,4 +1,4 @@
-<title>Internet Detective</title>
+<title>OSINT Sandbox </title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -152,7 +152,7 @@ p{margin:0 0 .9rem}
 .toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.15rem}
 .toc a{display:flex;gap:.65rem;align-items:baseline;padding:.4rem .55rem;border-radius:7px;text-decoration:none;color:var(--muted);transition:background .15s,color .15s}
 .toc a:hover{background:var(--surface-2);color:var(--text)}
-.toc a .num{font:500 11px/1.5 var(--mono);color:var(--accent-ink);min-width:1.6em}
+.toc a .num{font:500 11px/1.5 var(--mono);color:var(--accent-ink);min-width:1.9em;text-align:right;flex:none}
 .content{padding:2.4rem 0 5rem;min-width:0}
 @media (max-width:900px){
   .shell{grid-template-columns:1fr}
@@ -212,6 +212,19 @@ td code,.mono{font-family:var(--mono);font-size:.86em;color:var(--accent-ink)}
 .m-del{background:rgba(173,67,61,.16);color:var(--bad)}
 .m-put{background:var(--tag-bg);color:var(--accent-ink)}
 
+/* table captions */
+.tcap{font:600 12px/1.45 var(--mono);letter-spacing:.02em;color:var(--muted);margin:1.6rem 0 .5rem}
+.tcap b{color:var(--accent-ink);font-weight:600}
+
+/* month timeline strip */
+.months{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin:1.4rem 0}
+.months .m{border:1px solid var(--border);border-radius:10px;padding:.7rem;background:var(--surface)}
+.months .m .mn{font:600 10px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.months .m .mt{font-size:.82rem;margin-top:.35rem;color:var(--text)}
+.months .m.done{border-color:var(--good);background:var(--tag-bg)}
+.months .m.done .mn{color:var(--good)}
+@media (max-width:720px){.months{grid-template-columns:1fr 1fr}}
+
 /* ============ CODE ============ */
 pre.code{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;overflow-x:auto;margin:1.2rem 0;font-family:var(--mono);font-size:.82rem;line-height:1.65;color:var(--text)}
 pre.code .c{color:var(--faint)}
@@ -246,10 +259,10 @@ footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1
 <header class="topbar">
   <div class="brand">
     <span class="glyph">🕵</span>
-    <div>Internet&nbsp;Detective <small>Design&nbsp;Spec&nbsp;v1.1&nbsp;·&nbsp;₹0</small></div>
+    <div>OSINT &nbsp;SandBox <small>Design&nbsp;Spec&nbsp;v1.2&nbsp;·&nbsp;₹0</small></div>
   </div>
   <div class="spacer"></div>
-  <span class="status-pill"><span class="dot"></span>Awaiting approval</span>
+  <span class="status-pill"><span class="dot" style="background:var(--good);box-shadow:0 0 0 3px rgba(47,143,104,.18)"></span>Demo live · 5-month build</span>
   <button class="theme-btn" id="themeBtn" aria-label="Toggle colour theme">◐ Theme</button>
 </header>
 
@@ -277,7 +290,7 @@ footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1
     <div class="eyebrow">Product &amp; Systems Architecture</div>
     <h1>The internet<br>leaves <em>clues.</em></h1>
     <div class="sub">Can you connect them?</div>
-    <p class="lede">A complete design package for <strong>Internet Detective</strong> — a data-driven OSINT investigation simulation where players crack fictional cybersecurity mysteries by discovering entities, correlating evidence, reconstructing timelines, and defending a case. This document is the architecture to review and approve <em>before</em> any implementation begins.</p>
+    <p class="lede">A complete design package for <strong>OSINT Sandbox </strong> — a data-driven OSINT investigation simulation where players crack fictional cybersecurity mysteries by discovering entities, correlating evidence, reconstructing timelines, and defending a case. This is the living blueprint behind the project — the playable demo you can run today, and the five-month plan to build it out in full.</p>
     <div class="meta-row">
       <span>Project&nbsp;·&nbsp;<b>B.Tech CSE FYP</b></span>
       <span>Type&nbsp;·&nbsp;<b>OSINT Investigation Sim</b></span>
@@ -290,14 +303,14 @@ footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1
 
 <div class="stats">
   <div><div class="n">100%</div><div class="l">Fictional / simulated data</div></div>
-  <div><div class="n">9</div><div class="l">Delivery phases</div></div>
+  <div><div class="n">~5 mo</div><div class="l">Full-build timeline</div></div>
   <div><div class="n">6</div><div class="l">Scored reasoning dimensions</div></div>
   <div><div class="n">1</div><div class="l">Engine · N cases (data-driven)</div></div>
 </div>
 
 <div class="shell">
   <nav class="toc" aria-label="Table of contents">
-    <h4>Deliverables</h4>
+    <h4>Contents</h4>
     <ol>
       <li><a href="#s0"><span class="num">00</span> How to read this</a></li>
       <li><a href="#s1"><span class="num">01</span> Product architecture</a></li>
@@ -314,7 +327,7 @@ footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1
       <li><a href="#s12"><span class="num">12</span> Implementation roadmap</a></li>
       <li><a href="#s13"><span class="num">13</span> Case #001 spec</a></li>
       <li><a href="#s14"><span class="num">14</span> Tech choices</a></li>
-      <li><a href="#decisions"><span class="num">→</span> Decisions for you</a></li>
+      <li><a href="#decisions"><span class="num">15</span> Status &amp; next steps</a></li>
     </ol>
   </nav>
 
@@ -333,7 +346,7 @@ footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1
       <li><span class="tag mvp">MVP</span> ships in the first playable slice · <span class="tag later">LATER</span> is designed now, built after MVP · <span class="tag stretch">STRETCH</span> is optional depth if time allows.</li>
       <li>Diagrams render on "pinned paper" cards so they stay legible in both light and dark. Green callouts are <strong>recommendations</strong>; red are <strong>risks / things to cut</strong>.</li>
     </ul>
-    <p>I've deliberately made the ambitious spec <em>feasible</em> for one student in a final year: the full vision is preserved as a roadmap, but the MVP is a thin, demonstrable vertical slice. Where you invited trade-off comparisons, I give a recommendation rather than a survey. Open decisions that genuinely need your call are collected at the end.</p>
+    <p>I've deliberately made the ambitious spec <em>feasible</em> for one student in a final year: the full vision is preserved as a roadmap, but the MVP is a thin, demonstrable vertical slice. Where you invited trade-off comparisons, I give a recommendation rather than a survey. The current build status and the month-by-month plan are in §15 at the end.</p>
   </section>
 
   <!-- ============ 01 ============ -->
@@ -357,6 +370,7 @@ footer .safe{border:1px dashed var(--border-strong);border-radius:12px;padding:1
   <!-- ============ 02 ============ -->
   <section id="s2">
     <div class="sec-head"><div class="idx">02</div><div><h2>Feature specification</h2><div class="tagline">Every module, scoped honestly against a final-year timeline.</div></div></div>
+    <div class="tcap"><b>Table 2.1:</b> Feature modules and delivery scope</div>
     <div class="twrap">
       <table>
         <thead><tr><th>Module</th><th>Key capabilities</th><th>Scope</th></tr></thead>
@@ -532,6 +546,7 @@ erDiagram
   <section id="s5">
     <div class="sec-head"><div class="idx">05</div><div><h2>API specification</h2><div class="tagline">Versioned REST · Pydantic-validated · OpenAPI auto-documented.</div></div></div>
     <p>Base path <code class="inline">/api/v1</code>. Auth via short-lived JWT access token (Authorization header) + refresh token in an httpOnly, SameSite cookie. Uniform error envelope: <code class="inline">{ "error": { "code", "message", "details" } }</code>. All list endpoints paginate with <code class="inline">?limit&amp;cursor</code>.</p>
+    <div class="tcap"><b>Table 5.1:</b> REST API surface (v1)</div>
     <div class="twrap">
       <table>
         <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th><th>Auth</th></tr></thead>
@@ -703,6 +718,7 @@ flowchart TB
   <!-- ============ 09 ============ -->
   <section id="s9">
     <div class="sec-head"><div class="idx">09</div><div><h2>Security threat model</h2><div class="tagline">Treated as a first-class FYP chapter — STRIDE + game-specific threats.</div></div></div>
+    <div class="tcap"><b>Table 9.1:</b> STRIDE threat model and mitigations</div>
     <div class="twrap">
       <table>
         <thead><tr><th>Threat</th><th>Vector</th><th>Mitigation</th></tr></thead>
@@ -777,26 +793,33 @@ flowchart TB
 
   <!-- ============ 12 ============ -->
   <section id="s12">
-    <div class="sec-head"><div class="idx">12</div><div><h2>Implementation roadmap</h2><div class="tagline">Your 9 phases, sequenced and de-risked for one student.</div></div></div>
+    <div class="sec-head"><div class="idx">12</div><div><h2>Implementation roadmap</h2><div class="tagline">A five-month build. The demo you're seeing is Month 1 — the rest ships in force over the coming months.</div></div></div>
+
+    <div class="months">
+      <div class="m done"><div class="mn">Month 1 · done</div><div class="mt">Foundation + playable demo</div></div>
+      <div class="m"><div class="mn">Month 2</div><div class="mt">Scoring &amp; game mechanics</div></div>
+      <div class="m"><div class="mn">Month 3</div><div class="mt">OSINT depth &amp; mentor</div></div>
+      <div class="m"><div class="mn">Month 4</div><div class="mt">Authoring &amp; analytics</div></div>
+      <div class="m"><div class="mn">Month 5</div><div class="mt">Polish, study &amp; viva</div></div>
+    </div>
+
+    <div class="tcap"><b>Table 12.1:</b> Five-month build timeline</div>
     <div class="twrap">
       <table>
-        <thead><tr><th>Phase</th><th>Delivers</th><th>Milestone</th></tr></thead>
+        <thead><tr><th>Month</th><th>Focus</th><th>Key deliverables</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td><strong>1 · Foundation</strong></td><td>Repo, Docker Compose, Postgres, auth + RBAC, design-system shell, CI.</td><td>Login works; empty dashboard renders. <span class="tag mvp">MVP</span></td></tr>
-          <tr><td><strong>2 · Investigation engine</strong></td><td>Case schema + importer, seed Case #001, fog-of-war state, React Flow canvas, lookup endpoint.</td><td>Discover entities by searching. <span class="tag mvp">MVP</span></td></tr>
-          <tr><td><strong>3 · Game mechanics</strong></td><td>Evidence, timeline, hypothesis, submission, deterministic scorer, XP/rank.</td><td>Full loop: brief → submit → score. <span class="tag mvp">MVP</span></td></tr>
-          <tr><td><strong>4 · Simulated OSINT</strong></td><td>Search, Email, Domain/DNS, IP tool UIs over case datasets; metadata viewer.</td><td>All four tools + one more case. <span class="tag mvp">MVP</span>/<span class="tag later">LATER</span></td></tr>
-          <tr><td><strong>5 · Watson AI</strong></td><td>Scoped retrieval tools, hint ladder, Claude integration + offline fallback.</td><td>Contextual, non-spoiling hints. <span class="tag stretch">STRETCH</span></td></tr>
-          <tr><td><strong>6 · Admin</strong></td><td>Visual case editor mirroring the board; evidence/timeline/solution config.</td><td>Author a case without JSON. <span class="tag later">LATER</span></td></tr>
-          <tr><td><strong>7 · Analytics</strong></td><td>Player skill radar; admin case metrics; learning progress.</td><td>Charts from real action logs. <span class="tag later">LATER</span></td></tr>
-          <tr><td><strong>8 · Polish</strong></td><td>Motion, onboarding, a11y, responsive, empty/error/loading states.</td><td>Demo-grade UX. <span class="tag later">LATER</span></td></tr>
-          <tr><td><strong>9 · Evaluation</strong></td><td>User study, metrics collection, research write-up.</td><td>Research chapter + data. <span class="tag later">LATER</span></td></tr>
+          <tr><td><strong>1</strong></td><td>Foundation &amp; playable demo</td><td>Repo + Docker Compose + Postgres · secure auth + RBAC · data-driven investigation engine (fog-of-war, OSINT lookups) · React Flow workspace · Cases #001–#004 playable end-to-end · submission + debrief · full test suites.</td><td><span class="tag mvp">Done</span></td></tr>
+          <tr><td><strong>2</strong></td><td>Scoring &amp; game mechanics</td><td>Deterministic 6-dimension scorer · timeline reconstruction UI · hypothesis builder · evidence-relevance grading · hint penalties · XP, ranks &amp; achievements.</td><td><span class="tag later">Planned</span></td></tr>
+          <tr><td><strong>3</strong></td><td>OSINT depth &amp; mentor</td><td>Identity / image / metadata tool panels · additional cases (#005–#008) · rule-based Watson mentor (state-aware hints) · optional local LLM via Ollama.</td><td><span class="tag later">Planned</span></td></tr>
+          <tr><td><strong>4</strong></td><td>Authoring &amp; analytics</td><td>Admin case CRUD · visual case builder · player &amp; admin analytics (Recharts) · research instrumentation + anonymised CSV/JSON export.</td><td><span class="tag later">Planned</span></td></tr>
+          <tr><td><strong>5</strong></td><td>Polish, evaluation &amp; submission</td><td>Motion, onboarding, accessibility, responsive, empty/error states · controlled user study · metrics analysis &amp; graphs · documentation · viva &amp; demo prep.</td><td><span class="tag later">Planned</span></td></tr>
         </tbody>
       </table>
     </div>
+
     <div class="callout">
-      <span class="lbl">Sequencing advice</span>
-      <p>Phases 1–3 are the critical path to a defensible project — protect them. Treat Watson (5), Admin (6) and the full user study (9) as independent modules you slot in as time allows; none blocks a passing, demonstrable build. Build <strong>Case #002 early</strong> (in Phase 4) — a second case is the cheapest, most convincing proof that the engine is truly data-driven.</p>
+      <span class="lbl">How the demo maps to the plan</span>
+      <p>Month 1 is already built and running locally — four data-driven cases play front-to-back through the engine. Everything after is additive breadth over that proven core: scoring, mentor, authoring, analytics and the research study. The risky part is behind us, so the remaining months are scope, not uncertainty. Every month stays ₹0 and fully local.</p>
     </div>
   </section>
 
@@ -805,6 +828,7 @@ flowchart TB
     <div class="sec-head"><div class="idx">13</div><div><h2>Case #001 — The Midnight Leak</h2><div class="tagline">The first fully-designed, logically-consistent playable case.</div></div></div>
     <p><strong>Scenario.</strong> <em>Aurelia Systems</em> (fictional) discovers a confidential internal product spec published on a fictional file-sharing service at <strong>02:17 UTC</strong>. The player must identify the source of the leak and reconstruct the events. The truth: an employee's credentials were phished; the attacker used the <code class="inline">nightowl_42</code> persona across independent services, and metadata ties the exfiltration to one IP and one account.</p>
     <h4 class="sub-h">Entities (10)</h4>
+    <div class="tcap"><b>Table 13.1:</b> Case #001 entity catalogue</div>
     <div class="twrap"><table>
       <thead><tr><th>Id</th><th>Type</th><th>Label</th><th>Role</th></tr></thead>
       <tbody>
@@ -843,6 +867,7 @@ flowchart TB
   <!-- ============ 14 ============ -->
   <section id="s14">
     <div class="sec-head"><div class="idx">14</div><div><h2>Technology choices</h2><div class="tagline">Your proposed stack — endorsed, with three deliberate simplifications.</div></div></div>
+    <div class="tcap"><b>Table 14.1:</b> Technology stack and rationale</div>
     <div class="twrap">
       <table>
         <thead><tr><th>Layer</th><th>Choice</th><th>Why (FYP lens)</th></tr></thead>
@@ -877,16 +902,14 @@ flowchart TB
 
   <!-- ============ DECISIONS ============ -->
   <section id="decisions">
-    <div class="sec-head"><div class="idx">→</div><div><h2>Decisions for you</h2><div class="tagline">Four calls that shape what I build first. Everything else I'll default sensibly.</div></div></div>
-    <ol>
-      <li><strong>Watson in the MVP?</strong> I recommend shipping the <em>rule-based hint ladder</em> in MVP (works offline, no cost) and treating LLM phrasing as a stretch. Confirm, or ask me to wire the Claude API from the start.</li>
-      <li><strong>Research/user-study depth.</strong> The evaluation chapter (Phase 9) is a strong academic differentiator but time-costly. Do you want the app instrumented for a formal pre/post user study from day one, or is a lighter "analytics dashboard" sufficient for your rubric?</li>
-      <li><strong>Admin editor priority.</strong> MVP authors cases via validated JSON + seed. Is the <em>visual</em> admin case editor (Phase 6) something your examiners will expect to see demoed, or acceptable as "designed, future work"?</li>
-      <li><strong>Deployment target.</strong> Local Docker Compose for the viva is the safe default. Do you also need a hosted public URL (which adds cost + a bit of ops), or is a local/loopback demo fine?</li>
-    </ol>
-    <div class="callout">
-      <span class="lbl">Next step</span>
-      <p>Review the above and tell me what to adjust. On your approval — and your four answers — I'll begin <strong>Phase 1</strong>: repo scaffold, Docker Compose, Postgres schema + first migration, auth + RBAC, and the design-system shell. I'll deliver complete, working files, incrementally, and we'll build the loop from the foundation up.</p>
+    <div class="sec-head"><div class="idx">15</div><div><h2>Status &amp; next steps</h2><div class="tagline">Where the project stands today, and what the coming months add.</div></div></div>
+    <div class="grid2">
+      <div class="card"><h5>✓ Built &amp; running — the demo</h5><p>Local Docker / SQLite stack · secure auth (Argon2 + JWT + rotating refresh) · RBAC · the data-driven investigation engine with fog-of-war discovery · React Flow workspace · <strong>four playable cases</strong> (difficulty ★–★★★★) · evidence collection, relationship drawing, submission &amp; debrief · full backend and frontend test suites.</p></div>
+      <div class="card"><h5>→ Coming over ~5 months</h5><p>Deterministic 6-dimension scoring · timeline reconstruction &amp; hypotheses · Watson rule-based mentor (optional local LLM) · admin authoring + visual case builder · player &amp; admin analytics · research instrumentation + user study · accessibility and final polish. See the month timeline in §12.</p></div>
+    </div>
+    <div class="callout rec">
+      <span class="lbl">Design decisions — locked</span>
+      <p>Deterministic scoring, never LLM-as-judge · the investigation graph lives in PostgreSQL · every target is fictional or a reserved example · the core runs fully locally under Docker at <strong>₹0</strong>, with any AI mentor optional and local. These constraints hold across every remaining month.</p>
     </div>
   </section>
 
@@ -895,9 +918,9 @@ flowchart TB
 
 <footer>
   <div class="safe">
-    <strong>Safety &amp; privacy statement.</strong> All investigation targets — identities, usernames, emails, domains, IPs, organizations, files and social profiles — are fictional or reserved examples (<code class="inline">*.example</code> domains, RFC-5737 documentation IP ranges) created solely for this educational simulation. Internet Detective performs no real-world reconnaissance, scraping, credential testing, scanning, or investigation of real private individuals. It teaches OSINT <em>methodology</em> and analytical reasoning in a sandbox — nothing more.
+    <strong>Safety &amp; privacy statement.</strong> All investigation targets — identities, usernames, emails, domains, IPs, organizations, files and social profiles — are fictional or reserved examples (<code class="inline">*.example</code> domains, RFC-5737 documentation IP ranges) created solely for this educational simulation. OSINT Sandbox performs no real-world reconnaissance, scraping, credential testing, scanning, or investigation of real private individuals. It teaches OSINT <em>methodology</em> and analytical reasoning in a sandbox — nothing more.
   </div>
-  Internet Detective · Design Specification v1.0 · B.Tech CSE Final-Year Project · 2026-09-17 · Awaiting approval before implementation.
+  OSINT Sandbox · Design Specification v1.2 · B.Tech CSE Final-Year Project · Month 1 demo built — full build over ~5 months.
 </footer>
 
 <script>

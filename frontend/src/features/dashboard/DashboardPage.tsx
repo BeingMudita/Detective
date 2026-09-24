@@ -28,7 +28,7 @@ export function DashboardPage() {
         {user?.display_name}
       </h1>
       <p className="mt-1 text-muted">
-        Your investigation desk. Cases arrive in Phase 3 — the foundation is live.
+        Your investigation desk. 
       </p>
 
       <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
