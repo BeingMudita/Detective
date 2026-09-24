@@ -1,0 +1,100 @@
+{
+  "code": "CASE-002",
+  "title": "The Phantom Invoice",
+  "difficulty": 3,
+  "org": "Northwind Retail",
+  "summary": "Northwind's finance team paid a GBP 48,200 invoice to a new bank account after an email that appeared to come from their supplier, Baxter Freight. Baxter say they never sent it. Find who ran the scam and how. Watch the domains carefully - and don't be fooled by the real vendor. All identities and infrastructure are fictional.",
+  "learning_objectives": [
+    "detecting look-alike (typosquat) domains",
+    "email header and origin analysis",
+    "correlating a handle across forums",
+    "WHOIS / registrant attribution",
+    "separating the legitimate vendor from the impostor"
+  ],
+
+  "entities": [
+    { "ext_id": "e_email_fake", "type": "email", "label": "billing@baxter-freight.example", "initial": true },
+    { "ext_id": "e_domain_legit", "type": "domain", "label": "baxterfreight.example", "initial": true },
+    { "ext_id": "e_file_invoice", "type": "file", "label": "invoice_8841.pdf", "initial": true },
+    { "ext_id": "e_ip_198", "type": "ip", "label": "198.51.100.23", "initial": true },
+    { "ext_id": "e_user_handle", "type": "username", "label": "freightguy", "initial": true },
+    { "ext_id": "e_domain_fake", "type": "domain", "label": "baxter-freight.example" },
+    { "ext_id": "e_person_fraud", "type": "person", "label": "M. Kessler" },
+    { "ext_id": "e_alt", "type": "username", "label": "kessler_m" },
+    { "ext_id": "e_social", "type": "social", "label": "FreightForum: freightguy" },
+    { "ext_id": "e_mule", "type": "person", "label": "A. Doyle" },
+    { "ext_id": "e_person_realrep", "type": "person", "label": "S. Baxter", "red_herring": true },
+    { "ext_id": "e_ip_legit", "type": "ip", "label": "203.0.113.77" }
+  ],
+
+  "relationships": [
+    { "ext_id": "r1", "source": "e_person_fraud", "target": "e_email_fake", "rel_type": "controls", "correct": true },
+    { "ext_id": "r2", "source": "e_person_fraud", "target": "e_domain_fake", "rel_type": "registered", "correct": true },
+    { "ext_id": "r3", "source": "e_email_fake", "target": "e_domain_fake", "rel_type": "hosted_on", "correct": true },
+    { "ext_id": "r4", "source": "e_domain_fake", "target": "e_ip_198", "rel_type": "hosted_on", "correct": true },
+    { "ext_id": "r5", "source": "e_user_handle", "target": "e_alt", "rel_type": "alias_of", "correct": true },
+    { "ext_id": "r6", "source": "e_alt", "target": "e_person_fraud", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r7", "source": "e_user_handle", "target": "e_person_fraud", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r8", "source": "e_file_invoice", "target": "e_alt", "rel_type": "created_by", "correct": true },
+    { "ext_id": "r9", "source": "e_mule", "target": "e_person_fraud", "rel_type": "launders_for", "correct": true },
+    { "ext_id": "r10", "source": "e_social", "target": "e_user_handle", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r11", "source": "e_domain_legit", "target": "e_ip_198", "rel_type": "resolves_to", "correct": false },
+    { "ext_id": "r12", "source": "e_email_fake", "target": "e_person_realrep", "rel_type": "belongs_to", "correct": false },
+    { "ext_id": "r13", "source": "e_person_realrep", "target": "e_domain_legit", "rel_type": "represents", "correct": true }
+  ],
+
+  "evidence": [
+    { "ext_id": "E-201", "kind": "incident_report", "source": "Northwind Finance", "reliability": "high", "relevance": 2, "initial": true, "content": "Finance paid invoice_8841.pdf (GBP 48,200) to a new bank account on 14 May after an email from billing@baxter-freight.example. Baxter Freight say they never sent it.", "related": ["e_file_invoice", "e_email_fake"] },
+    { "ext_id": "E-202", "kind": "file_metadata", "source": "File Analysis", "reliability": "high", "relevance": 3, "initial": true, "content": "invoice_8841.pdf mirrors Baxter's genuine template but the bank details differ and the PDF producer is not the one used on prior real invoices.", "related": ["e_file_invoice"] },
+    { "ext_id": "E-203", "kind": "email_header", "source": "Mail Gateway", "reliability": "high", "relevance": 3, "initial": true, "content": "The invoice email's Received chain originates from 198.51.100.23; display name 'Baxter Freight Billing'.", "related": ["e_email_fake", "e_ip_198"] },
+    { "ext_id": "E-204", "kind": "search_result", "source": "Public Search", "reliability": "medium", "relevance": 3, "content": "The handle 'freightguy' (from the email signature) appears on FreightForum and links to 'kessler_m' on a logistics board.", "related": ["e_user_handle", "e_social", "e_alt"], "supports_solution": true },
+    { "ext_id": "E-205", "kind": "profile", "source": "FreightForum", "reliability": "low", "relevance": 1, "content": "FreightForum user 'freightguy' has posts boasting about 'redirecting payments'.", "related": ["e_social"] },
+    { "ext_id": "E-209", "kind": "email_intel", "source": "Mail Intelligence", "reliability": "high", "relevance": 4, "content": "billing@baxter-freight.example is NOT a Baxter Freight mailbox; the domain baxter-freight.example was registered two weeks ago.", "related": ["e_email_fake", "e_domain_fake"], "supports_solution": true },
+    { "ext_id": "E-219", "kind": "email_metadata", "source": "Mail Archive", "reliability": "high", "relevance": 4, "content": "Message X-Originating-IP is 198.51.100.23; the mailer signature matches the handle 'freightguy'.", "related": ["e_email_fake", "e_ip_198", "e_user_handle"], "supports_solution": true },
+    { "ext_id": "E-214", "kind": "whois", "source": "Domain Registration", "reliability": "high", "relevance": 5, "content": "baxter-freight.example was registered via a privacy proxy; the registrant contact resolves to M. Kessler. Hosted on 198.51.100.23.", "related": ["e_domain_fake", "e_person_fraud", "e_ip_198"], "supports_solution": true },
+    { "ext_id": "E-220", "kind": "dns_record", "source": "DNS Intelligence", "reliability": "medium", "relevance": 2, "content": "baxter-freight.example MX points to a disposable mail provider and has no relationship to baxterfreight.example.", "related": ["e_domain_fake", "e_domain_legit"] },
+    { "ext_id": "E-231", "kind": "dns_record", "source": "DNS Intelligence", "reliability": "high", "relevance": 0, "content": "baxterfreight.example (the real vendor) has normal, long-standing infrastructure and lists S. Baxter as its public contact. Nothing anomalous here.", "related": ["e_domain_legit", "e_person_realrep", "e_ip_legit"] },
+    { "ext_id": "E-216", "kind": "ip_intel", "source": "Network Intelligence", "reliability": "high", "relevance": 4, "content": "198.51.100.23 - ASN 'Example Hosting'; currently hosts baxter-freight.example. It is not associated with Baxter Freight's real network.", "related": ["e_ip_198", "e_domain_fake"], "supports_solution": true },
+    { "ext_id": "E-224", "kind": "identity_match", "source": "People Search", "reliability": "medium", "relevance": 3, "content": "'freightguy' and 'kessler_m' are tied to the same person, M. Kessler, across two forums.", "related": ["e_person_fraud", "e_alt"], "supports_solution": true },
+    { "ext_id": "E-217", "kind": "financial_trace", "source": "Bank Trace", "reliability": "medium", "relevance": 3, "content": "The receiving bank account is held by A. Doyle, a money mule linked to 'kessler_m'.", "related": ["e_mule", "e_alt"] },
+    { "ext_id": "E-241", "kind": "file_event", "source": "DLP Logs", "reliability": "low", "relevance": 0, "content": "A duplicate download of invoice_8841.pdf is logged at 03:00, earlier than its stated creation time - a logging artefact, not evidence of anything.", "related": ["e_file_invoice"] },
+    { "ext_id": "E-243", "kind": "file_metadata", "source": "File Analysis", "reliability": "high", "relevance": 4, "content": "invoice_8841.pdf embedded metadata shows it was last modified by user 'kessler_m'.", "related": ["e_file_invoice", "e_alt"], "supports_solution": true }
+  ],
+
+  "osint_records": [
+    { "tool": "search", "query": "freightguy", "reveals": { "entities": ["e_social", "e_alt"], "evidence": ["E-204", "E-205"] }, "response": "Results across FreightForum and a logistics board (as 'kessler_m')." },
+    { "tool": "email", "query": "billing@baxter-freight.example", "reveals": { "entities": ["e_domain_fake", "e_person_fraud"], "evidence": ["E-209", "E-219"] }, "response": "Mailbox and originating domain intelligence returned." },
+    { "tool": "domain", "query": "baxter-freight.example", "reveals": { "entities": [], "evidence": ["E-214", "E-220"] }, "response": "Registration and DNS records for the look-alike domain returned." },
+    { "tool": "domain", "query": "baxterfreight.example", "reveals": { "entities": ["e_person_realrep", "e_ip_legit"], "evidence": ["E-231"] }, "response": "Records for the genuine vendor domain returned." },
+    { "tool": "ip", "query": "198.51.100.23", "reveals": { "entities": [], "evidence": ["E-216"] }, "response": "ASN and hosting intelligence returned." },
+    { "tool": "identity", "query": "freightguy", "reveals": { "entities": ["e_person_fraud"], "evidence": ["E-224"] }, "response": "An identity match across forums surfaced." },
+    { "tool": "identity", "query": "kessler_m", "reveals": { "entities": ["e_mule"], "evidence": ["E-217"] }, "response": "A linked financial associate surfaced." },
+    { "tool": "file", "query": "invoice_8841.pdf", "reveals": { "entities": [], "evidence": ["E-241", "E-243"] }, "response": "Embedded document metadata extracted." }
+  ],
+
+  "timeline": [
+    { "ext_id": "t1", "at": "May 1", "label": "Look-alike domain baxter-freight.example registered", "actor": "e_person_fraud", "order": 1, "source": "WHOIS" },
+    { "ext_id": "t2", "at": "May 12", "label": "Reconnaissance email to Northwind finance", "actor": "e_email_fake", "order": 2, "source": "Mail Archive" },
+    { "ext_id": "t3", "at": "May 13", "label": "Fraudulent invoice_8841.pdf prepared", "actor": "e_alt", "order": 3, "source": "File metadata" },
+    { "ext_id": "t4", "at": "May 14 08:40", "label": "Invoice email sent from 198.51.100.23", "actor": "e_ip_198", "order": 4, "source": "Mail headers" },
+    { "ext_id": "t5", "at": "May 14 09:12", "label": "Finance replies to confirm the new bank details", "order": 5, "source": "Mail Archive" },
+    { "ext_id": "t6", "at": "May 14 11:30", "label": "Payment of GBP 48,200 released", "order": 6, "source": "Finance" },
+    { "ext_id": "t7", "at": "May 14 12:05", "label": "Funds moved to a mule account (A. Doyle)", "actor": "e_mule", "order": 7, "source": "Bank Trace" },
+    { "ext_id": "t8", "at": "May 16", "label": "Real Baxter Freight flags non-payment; fraud discovered", "actor": "e_person_realrep", "order": 8, "source": "Vendor" }
+  ],
+
+  "hints": [
+    { "level": 1, "body": "Compare the sender's domain with the vendor's real domain, character by character.", "cost": 3 },
+    { "level": 2, "body": "Trace the handle in the email signature across other sites.", "cost": 5 },
+    { "level": 3, "body": "Find who registered the look-alike domain and who last edited the invoice.", "cost": 8 }
+  ],
+
+  "solution": {
+    "actor": "e_person_fraud",
+    "attack_vector": "phishing",
+    "required_evidence": ["E-204", "E-209", "E-214", "E-216", "E-243"],
+    "red_herring_evidence": ["E-231", "E-241"],
+    "canonical_timeline": ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8"],
+    "weights": { "collection": 20, "relevance": 20, "timeline": 20, "relationships": 15, "hypothesis": 15, "reasoning": 10 }
+  }
+}

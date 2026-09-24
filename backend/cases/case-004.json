@@ -1,0 +1,102 @@
+{
+  "code": "CASE-004",
+  "title": "The Open Door",
+  "difficulty": 4,
+  "org": "Halcyon Health",
+  "summary": "A file of 12,000 patient records (patients_export.csv) was posted to a paste site. Several people touched the exposed storage - a scraper who published it, a researcher who quietly reported it, and whoever left the door open in the first place. Your objective: identify who CAUSED the exposure, and how. Not everyone who accessed the data is a culprit. Every identity and address here is fictional.",
+  "learning_objectives": [
+    "distinguishing root cause from downstream actors",
+    "reading configuration and commit metadata",
+    "attribution across storage access logs",
+    "recognising responsible disclosure vs malicious access",
+    "resisting decoy infrastructure"
+  ],
+
+  "entities": [
+    { "ext_id": "e_bucket", "type": "domain", "label": "halcyon-data.example", "initial": true },
+    { "ext_id": "e_paste", "type": "domain", "label": "pastebucket.example", "initial": true },
+    { "ext_id": "e_file_dump", "type": "file", "label": "patients_export.csv", "initial": true },
+    { "ext_id": "e_ip_ext", "type": "ip", "label": "203.0.113.201", "initial": true },
+    { "ext_id": "e_user_scraper", "type": "username", "label": "grabby", "initial": true },
+    { "ext_id": "e_commit", "type": "file", "label": "deploy_config.yaml" },
+    { "ext_id": "e_devuser", "type": "username", "label": "tmalik" },
+    { "ext_id": "e_domain_mirror", "type": "domain", "label": "halcyon-mirror.example" },
+    { "ext_id": "e_social", "type": "social", "label": "SecList: grabby" },
+    { "ext_id": "e_alt", "type": "username", "label": "grab_by" },
+    { "ext_id": "e_ip_researcher", "type": "ip", "label": "198.51.100.66" },
+    { "ext_id": "e_eng", "type": "person", "label": "T. Malik" },
+    { "ext_id": "e_researcher", "type": "person", "label": "K. Ortega", "red_herring": true }
+  ],
+
+  "relationships": [
+    { "ext_id": "r1", "source": "e_commit", "target": "e_eng", "rel_type": "authored_by", "correct": true },
+    { "ext_id": "r2", "source": "e_commit", "target": "e_bucket", "rel_type": "misconfigured", "correct": true },
+    { "ext_id": "r3", "source": "e_devuser", "target": "e_eng", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r4", "source": "e_ip_ext", "target": "e_bucket", "rel_type": "accessed", "correct": true },
+    { "ext_id": "r5", "source": "e_user_scraper", "target": "e_ip_ext", "rel_type": "used", "correct": true },
+    { "ext_id": "r6", "source": "e_user_scraper", "target": "e_alt", "rel_type": "alias_of", "correct": true },
+    { "ext_id": "r7", "source": "e_user_scraper", "target": "e_file_dump", "rel_type": "published", "correct": true },
+    { "ext_id": "r8", "source": "e_file_dump", "target": "e_paste", "rel_type": "hosted_on", "correct": true },
+    { "ext_id": "r9", "source": "e_social", "target": "e_user_scraper", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r10", "source": "e_researcher", "target": "e_bucket", "rel_type": "reported", "correct": true },
+    { "ext_id": "r11", "source": "e_ip_researcher", "target": "e_bucket", "rel_type": "accessed", "correct": false },
+    { "ext_id": "r12", "source": "e_researcher", "target": "e_file_dump", "rel_type": "published", "correct": false },
+    { "ext_id": "r13", "source": "e_domain_mirror", "target": "e_bucket", "rel_type": "related_to", "correct": false },
+    { "ext_id": "r14", "source": "e_eng", "target": "e_ip_ext", "rel_type": "used", "correct": false }
+  ],
+
+  "evidence": [
+    { "ext_id": "E-301", "kind": "incident_report", "source": "Halcyon SOC", "reliability": "high", "relevance": 2, "initial": true, "content": "A file 'patients_export.csv' containing 12,000 records was posted to pastebucket.example at 03:14 UTC.", "related": ["e_file_dump", "e_paste"] },
+    { "ext_id": "E-303", "kind": "access_log", "source": "Storage Platform", "reliability": "high", "relevance": 3, "initial": true, "content": "The storage endpoint halcyon-data.example shows anonymous public reads from 203.0.113.201 spanning three days.", "related": ["e_bucket", "e_ip_ext"] },
+    { "ext_id": "E-302", "kind": "file_metadata", "source": "File Analysis", "reliability": "medium", "relevance": 1, "content": "patients_export.csv was produced by the storage export job; it carries no user watermark.", "related": ["e_file_dump"] },
+    { "ext_id": "E-314", "kind": "config_audit", "source": "Cloud Audit", "reliability": "high", "relevance": 4, "content": "The halcyon-data.example bucket ACL is set to public-read. The change was introduced in deploy_config.yaml.", "related": ["e_bucket", "e_commit"], "supports_solution": true },
+    { "ext_id": "E-315", "kind": "dns_record", "source": "DNS Intelligence", "reliability": "medium", "relevance": 0, "content": "Passive DNS shows an unrelated 'halcyon-mirror.example', a marketing microsite with no access to patient data.", "related": ["e_bucket", "e_domain_mirror"] },
+    { "ext_id": "E-304", "kind": "search_result", "source": "Public Search", "reliability": "medium", "relevance": 3, "content": "'grabby' (also 'grab_by') posts scraped datasets on SecList and claims to 'only expose what's already open'.", "related": ["e_user_scraper", "e_social", "e_alt"], "supports_solution": true },
+    { "ext_id": "E-305", "kind": "profile", "source": "SecList", "reliability": "low", "relevance": 1, "content": "SecList user 'grabby' has a reputation for finding open storage buckets.", "related": ["e_social"] },
+    { "ext_id": "E-316", "kind": "ip_intel", "source": "Network Intelligence", "reliability": "high", "relevance": 3, "content": "203.0.113.201 is a commodity scraping VPS whose egress matches grabby's known activity.", "related": ["e_ip_ext", "e_user_scraper"], "supports_solution": true },
+    { "ext_id": "E-320", "kind": "paste_meta", "source": "Paste Analysis", "reliability": "medium", "relevance": 2, "content": "The paste was posted by 'grabby'. A comment credits a researcher tip-off originating from 198.51.100.66.", "related": ["e_paste", "e_user_scraper", "e_ip_researcher"] },
+    { "ext_id": "E-309", "kind": "identity_intel", "source": "Corporate Directory", "reliability": "high", "relevance": 4, "content": "'tmalik' is engineer T. Malik on the platform team.", "related": ["e_devuser", "e_eng"], "supports_solution": true },
+    { "ext_id": "E-319", "kind": "commit_meta", "source": "Version Control", "reliability": "high", "relevance": 5, "content": "The deploy_config.yaml change was authored by 'tmalik' on the same day the public reads began.", "related": ["e_commit", "e_devuser", "e_eng"], "supports_solution": true },
+    { "ext_id": "E-317", "kind": "config_diff", "source": "Version Control", "reliability": "high", "relevance": 5, "content": "deploy_config.yaml diff: 'acl: private' was changed to 'acl: public-read'. Author: tmalik.", "related": ["e_commit", "e_eng"], "supports_solution": true },
+    { "ext_id": "E-330", "kind": "disclosure_note", "source": "Halcyon Inbox", "reliability": "high", "relevance": 0, "content": "198.51.100.66 belongs to researcher K. Ortega, who emailed Halcyon a responsible-disclosure notice BEFORE the paste appeared.", "related": ["e_ip_researcher", "e_researcher"] },
+    { "ext_id": "E-331", "kind": "access_log", "source": "Storage Platform", "reliability": "medium", "relevance": 0, "content": "A single read from 198.51.100.66 is logged, but it is a HEAD request only - consistent with verification, not bulk download.", "related": ["e_ip_researcher"] }
+  ],
+
+  "osint_records": [
+    { "tool": "domain", "query": "halcyon-data.example", "reveals": { "entities": ["e_commit", "e_devuser", "e_domain_mirror"], "evidence": ["E-314", "E-315"] }, "response": "Configuration audit and DNS records for the storage endpoint returned." },
+    { "tool": "search", "query": "grabby", "reveals": { "entities": ["e_social", "e_alt"], "evidence": ["E-304", "E-305"] }, "response": "Results across SecList and an alternate handle 'grab_by'." },
+    { "tool": "ip", "query": "203.0.113.201", "reveals": { "entities": [], "evidence": ["E-316"] }, "response": "Hosting and egress intelligence returned." },
+    { "tool": "domain", "query": "pastebucket.example", "reveals": { "entities": ["e_ip_researcher"], "evidence": ["E-320"] }, "response": "Paste metadata returned, including a referenced source IP." },
+    { "tool": "identity", "query": "tmalik", "reveals": { "entities": ["e_eng"], "evidence": ["E-309", "E-319"] }, "response": "The developer handle resolves to a named engineer." },
+    { "tool": "ip", "query": "198.51.100.66", "reveals": { "entities": ["e_researcher"], "evidence": ["E-330", "E-331"] }, "response": "Ownership and access details for the source IP returned." },
+    { "tool": "file", "query": "patients_export.csv", "reveals": { "entities": [], "evidence": ["E-302"] }, "response": "File provenance metadata extracted." },
+    { "tool": "file", "query": "deploy_config.yaml", "reveals": { "entities": [], "evidence": ["E-317"] }, "response": "Configuration diff extracted." }
+  ],
+
+  "timeline": [
+    { "ext_id": "t1", "at": "Day 1 14:20", "label": "deploy_config.yaml changes the bucket ACL to public-read", "actor": "e_eng", "order": 1, "source": "Version Control" },
+    { "ext_id": "t2", "at": "Day 1 14:35", "label": "Deployment applies the public ACL", "actor": "e_commit", "order": 2, "source": "CI/CD" },
+    { "ext_id": "t3", "at": "Day 2 02:10", "label": "Researcher detects the open bucket (HEAD request)", "actor": "e_researcher", "order": 3, "source": "Access logs" },
+    { "ext_id": "t4", "at": "Day 2 09:00", "label": "Researcher emails Halcyon a disclosure notice", "actor": "e_researcher", "order": 4, "source": "Inbox" },
+    { "ext_id": "t5", "at": "Day 2-4", "label": "Bulk anonymous reads from 203.0.113.201", "actor": "e_ip_ext", "order": 5, "source": "Access logs" },
+    { "ext_id": "t6", "at": "Day 4 22:50", "label": "Dataset compiled by the scraper", "actor": "e_user_scraper", "order": 6, "source": "Paste meta" },
+    { "ext_id": "t7", "at": "Day 5 03:14", "label": "patients_export.csv posted to pastebucket.example", "actor": "e_user_scraper", "order": 7, "source": "Paste" },
+    { "ext_id": "t8", "at": "Day 5 07:30", "label": "Leak reported in the press", "order": 8, "source": "SOC" },
+    { "ext_id": "t9", "at": "Day 5 09:15", "label": "Bucket ACL reverted to private", "actor": "e_eng", "order": 9, "source": "Version Control" }
+  ],
+
+  "hints": [
+    { "level": 1, "body": "The data was published, but what made it reachable in the first place?", "cost": 3 },
+    { "level": 2, "body": "Look at what changed on the storage endpoint, and who changed it.", "cost": 5 },
+    { "level": 3, "body": "Not everyone who touched the bucket is a culprit - separate the reporter from the cause.", "cost": 8 }
+  ],
+
+  "solution": {
+    "actor": "e_eng",
+    "attack_vector": "misconfiguration",
+    "required_evidence": ["E-314", "E-317", "E-319", "E-309", "E-316"],
+    "red_herring_evidence": ["E-330", "E-315"],
+    "canonical_timeline": ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"],
+    "weights": { "collection": 20, "relevance": 20, "timeline": 20, "relationships": 15, "hypothesis": 15, "reasoning": 10 }
+  }
+}

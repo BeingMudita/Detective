@@ -1,0 +1,76 @@
+{
+  "code": "CASE-003",
+  "title": "The Leaked Concept Art",
+  "difficulty": 1,
+  "org": "Lumen Media",
+  "summary": "Unreleased concept art (concept_hero.png) appeared on a fan forum nine days before the official reveal. The file carries an internal watermark, so it came from inside. Trace the leak back to its source. Every identity here is fictional. A gentle first case: follow one handle across sources, then find who owns the mailbox.",
+  "learning_objectives": [
+    "reading image and file metadata",
+    "username enumeration across sources",
+    "email-to-owner attribution",
+    "spotting a weak, unverified match"
+  ],
+
+  "entities": [
+    { "ext_id": "e_user_pixelwolf", "type": "username", "label": "pixelwolf", "initial": true },
+    { "ext_id": "e_email_pw", "type": "email", "label": "pixelwolf@lumen.example", "initial": true },
+    { "ext_id": "e_image", "type": "image", "label": "concept_hero.png", "initial": true },
+    { "ext_id": "e_forum", "type": "social", "label": "FanForum: pixelwolf" },
+    { "ext_id": "e_alt_wolfie", "type": "username", "label": "wolfie_px" },
+    { "ext_id": "e_contractor", "type": "person", "label": "J. Rhee" },
+    { "ext_id": "e_staff_deco", "type": "person", "label": "Deco (staff)", "red_herring": true }
+  ],
+
+  "relationships": [
+    { "ext_id": "r1", "source": "e_user_pixelwolf", "target": "e_email_pw", "rel_type": "uses", "correct": true },
+    { "ext_id": "r2", "source": "e_user_pixelwolf", "target": "e_alt_wolfie", "rel_type": "alias_of", "correct": true },
+    { "ext_id": "r3", "source": "e_email_pw", "target": "e_contractor", "rel_type": "belongs_to", "correct": true },
+    { "ext_id": "r4", "source": "e_image", "target": "e_user_pixelwolf", "rel_type": "created_by", "correct": true },
+    { "ext_id": "r5", "source": "e_forum", "target": "e_user_pixelwolf", "rel_type": "identity_of", "correct": true },
+    { "ext_id": "r6", "source": "e_staff_deco", "target": "e_image", "rel_type": "accessed_by", "correct": false },
+    { "ext_id": "r7", "source": "e_email_pw", "target": "e_staff_deco", "rel_type": "belongs_to", "correct": false }
+  ],
+
+  "evidence": [
+    { "ext_id": "E-101", "kind": "incident_report", "source": "Lumen SOC", "reliability": "high", "relevance": 2, "initial": true, "content": "concept_hero.png appeared on FanForum at 21:40 UTC, nine days before the official reveal.", "related": ["e_image"] },
+    { "ext_id": "E-103", "kind": "file_metadata", "source": "Asset System", "reliability": "high", "relevance": 2, "initial": true, "content": "The leaked file carries an internal 'Lumen - Confidential' watermark, indicating it originated inside the company.", "related": ["e_image"] },
+    { "ext_id": "E-102", "kind": "image_metadata", "source": "Image Analysis", "reliability": "high", "relevance": 4, "content": "EXIF author field reads 'pixelwolf'; created 21:22 UTC using the internal art pipeline.", "related": ["e_image", "e_user_pixelwolf"], "supports_solution": true },
+    { "ext_id": "E-104", "kind": "search_result", "source": "Public Search", "reliability": "medium", "relevance": 3, "content": "The handle 'pixelwolf' posts on FanForum and also appears as 'wolfie_px' on an art-sharing site.", "related": ["e_user_pixelwolf", "e_forum", "e_alt_wolfie"], "supports_solution": true },
+    { "ext_id": "E-105", "kind": "profile", "source": "FanForum", "reliability": "medium", "relevance": 2, "content": "FanForum user 'pixelwolf' joined recently and uploaded the art at 21:40 UTC.", "related": ["e_forum"] },
+    { "ext_id": "E-109", "kind": "email_intel", "source": "Corporate Directory", "reliability": "high", "relevance": 4, "content": "pixelwolf@lumen.example is the mailbox of contractor J. Rhee on the art team.", "related": ["e_email_pw", "e_contractor"], "supports_solution": true },
+    { "ext_id": "E-110", "kind": "email_metadata", "source": "Corporate Mail Archive", "reliability": "high", "relevance": 5, "content": "An email from pixelwolf@lumen.example at 21:30 UTC attached concept_hero.png and was sent to an external address.", "related": ["e_email_pw", "e_image"], "supports_solution": true },
+    { "ext_id": "E-123", "kind": "forum_post", "source": "FanForum", "reliability": "low", "relevance": 0, "content": "A separate user 'deco' joked months ago about leaking art. Unrelated to this incident.", "related": ["e_staff_deco"] },
+    { "ext_id": "E-124", "kind": "identity_match", "source": "People Search", "reliability": "low", "relevance": 1, "content": "Weak, unverified match linking 'pixelwolf' to staff member Deco.", "related": ["e_staff_deco"] }
+  ],
+
+  "osint_records": [
+    { "tool": "search", "query": "pixelwolf", "reveals": { "entities": ["e_forum", "e_alt_wolfie"], "evidence": ["E-104", "E-105"] }, "response": "Results across FanForum and an art-sharing site (as 'wolfie_px')." },
+    { "tool": "email", "query": "pixelwolf@lumen.example", "reveals": { "entities": ["e_contractor"], "evidence": ["E-109", "E-110"] }, "response": "Mailbox resolves to a named contractor; outbound message metadata returned." },
+    { "tool": "identity", "query": "pixelwolf", "reveals": { "entities": ["e_staff_deco"], "evidence": ["E-123", "E-124"] }, "response": "A weak, unverified identity match surfaced. Treat with caution." },
+    { "tool": "image", "query": "concept_hero.png", "reveals": { "entities": [], "evidence": ["E-102"] }, "response": "Embedded EXIF metadata extracted." }
+  ],
+
+  "timeline": [
+    { "ext_id": "t1", "at": "21:22", "label": "concept_hero.png created in the internal pipeline", "actor": "e_user_pixelwolf", "order": 1, "source": "Asset System" },
+    { "ext_id": "t2", "at": "21:30", "label": "Email with the art sent to an external address", "actor": "e_email_pw", "order": 2, "source": "Mail Archive" },
+    { "ext_id": "t3", "at": "21:38", "label": "FanForum account 'pixelwolf' logs in", "actor": "e_forum", "order": 3, "source": "Forum logs" },
+    { "ext_id": "t4", "at": "21:40", "label": "Concept art uploaded to FanForum", "actor": "e_user_pixelwolf", "order": 4, "source": "Forum logs" },
+    { "ext_id": "t5", "at": "22:05", "label": "Post shared widely across the community", "actor": "e_user_pixelwolf", "order": 5, "source": "Forum logs" },
+    { "ext_id": "t6", "at": "09:00", "label": "Leak detected by the community team", "order": 6, "source": "SOC" }
+  ],
+
+  "hints": [
+    { "level": 1, "body": "Start from the image itself - who created it, and when?", "cost": 2 },
+    { "level": 2, "body": "The same handle appears on the forum and on an art-sharing site.", "cost": 4 },
+    { "level": 3, "body": "Check who owns the mailbox that sent the file to an external address.", "cost": 6 }
+  ],
+
+  "solution": {
+    "actor": "e_contractor",
+    "attack_vector": "insider_threat",
+    "required_evidence": ["E-102", "E-104", "E-109", "E-110"],
+    "red_herring_evidence": ["E-123"],
+    "canonical_timeline": ["t1", "t2", "t3", "t4", "t5", "t6"],
+    "weights": { "collection": 20, "relevance": 20, "timeline": 20, "relationships": 15, "hypothesis": 15, "reasoning": 10 }
+  }
+}
